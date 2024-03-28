@@ -55,6 +55,7 @@ Thumbs.db
 cmake-build-debug*/
 Drivers/
 Middlewares/
+MDK-ARM/
 硬件资料/
 retarget.*
 Core/Src/syscalls.c
