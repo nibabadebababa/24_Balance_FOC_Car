@@ -56,5 +56,5 @@ cmake-build-debug*/
 Drivers/
 Middlewares/
 硬件资料/
-syscalls.*
 retarget.*
+Core/Src/syscalls.c
