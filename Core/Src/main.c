@@ -121,6 +121,7 @@ int main(void) {
   HAL_I2C_Mem_Read(&hi2c1, (0x3C << 1) | 1, 0x01, I2C_MEMADD_SIZE_8BIT, &read,
                    1, 0xff);
   RetargetInit(&huart2);
+  Init_HMC5883L_HAL(&hi2c1);
 
   /* USER CODE END 2 */
 

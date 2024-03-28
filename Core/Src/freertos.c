@@ -26,6 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bsp_hmc.h"
 #include "bsp_motor.h"
 /* USER CODE END Includes */
 
@@ -148,11 +149,16 @@ void StartDefaultTask(void *argument) {
 /* USER CODE END Header_StartTask02 */
 void StartTask02(void *argument) {
   /* USER CODE BEGIN StartTask02 */
+  struct HMC5883L_Data HMC_temp; // 磁场传感器数据
+  double angle;                  // 偏航角
+  extern I2C_HandleTypeDef hi2c1;
   /* Infinite loop */
   for (;;) {
     HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
-    HAL_Delay(200);
-    printf("Hello World!\r\n");
+    HAL_Delay(10); // 100Hz太快了
+    angle = read_hmc5883l_HAL(&hi2c1, &HMC_temp);
+    printf("angle : %f\r\n", angle);
+    //    printf("Hello World!\r\n");
     osDelay(1);
   }
   /* USER CODE END StartTask02 */
