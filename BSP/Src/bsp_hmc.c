@@ -13,7 +13,7 @@ int g85_makeuint16(int msb, int lsb) {
 
 // 初始化和设置HMC5883L
 void Init_HMC5883L_HAL(I2C_HandleTypeDef *hi2c1) {
-  unsigned char cdata[3] = {0x70, 0x20, 0X00};
+  unsigned char cdata[3] = {0x70, 0x38, 0X00};
   HAL_I2C_Mem_Write(hi2c1, HMC5883L_Addr, HMC5883l_CONFIG_A,
                     I2C_MEMADD_SIZE_8BIT, cdata, 1, 1000); //
   HAL_I2C_Mem_Write(hi2c1, HMC5883L_Addr, HMC5883l_CONFIG_B,

@@ -155,7 +155,7 @@ void StartTask02(void *argument) {
   /* Infinite loop */
   for (;;) {
     HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
-    HAL_Delay(10); // 100Hz太快了
+    HAL_Delay(14); // 100Hz太快了
     angle = read_hmc5883l_HAL(&hi2c1, &HMC_temp);
     printf("angle : %f\r\n", angle);
     //    printf("Hello World!\r\n");
