@@ -30,6 +30,7 @@
 #include "bsp_hmc.h"
 #include "bsp_motor.h"
 #include "bsp_mpu.h"
+#include "interface_mpu6050_dmp.h"
 #include "retarget.h" // keil中需要对此进行注释
 /* USER CODE END Includes */
 
@@ -122,6 +123,7 @@ int main(void) {
                    1, 0xff);
   RetargetInit(&huart2);
   Init_HMC5883L_HAL(&hi2c1);
+  MPU6050_Init();
 
   /* USER CODE END 2 */
 
