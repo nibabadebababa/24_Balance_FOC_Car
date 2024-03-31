@@ -31,7 +31,7 @@
 #include "bsp_motor.h"
 #include "bsp_mpu.h"
 #include "interface_mpu6050_dmp.h"
-#include "retarget.h" // keil中需要对此进行注�?
+#include "retarget.h" // keil中需要对此进行注�???
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -99,6 +99,7 @@ int main(void)
   MX_TIM1_Init();
   MX_I2C1_Init();
   MX_USART2_UART_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   OLED_Init();
   OLED_Display_On();
@@ -116,7 +117,8 @@ int main(void)
   HAL_Delay(70);
   HAL_I2C_Mem_Read(&hi2c1, (0x3C << 1) | 1, 0x01, I2C_MEMADD_SIZE_8BIT, &read,
                    1, 0xff);
-  RetargetInit(&huart2);
+  RetargetInit(&huart2); // 串口
+                         //  RetargetInit(&huart1); // 蓝牙
   Init_HMC5883L_HAL(&hi2c1);
   MPU6050_Init();
 

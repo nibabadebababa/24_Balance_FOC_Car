@@ -49,11 +49,11 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(${includes} BSP/Inc Drivers/MPU6050_Drivers/Inc Libraries/Inc)
+include_directories(${includes} BSP/Inc Drivers/MPU6050_Drivers/Inc Libraries/Inc Applications/Inc)
 
 add_definitions(${defines})
 
-file(GLOB_RECURSE SOURCES ${sources} "BSP/*.*" "Drivers/MPU6050_Drivers/*.*" "Libraries/*.*")
+file(GLOB_RECURSE SOURCES ${sources} "BSP/*.*" "Drivers/MPU6050_Drivers/*.*" "Libraries/*.*" "Applications/*.*")
 
 set(LINKER_SCRIPT $${CMAKE_SOURCE_DIR}/${linkerScript})
 
