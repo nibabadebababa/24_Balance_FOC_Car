@@ -4,8 +4,8 @@
 #include "main.h"
 
 
-
-
+void UART1_BLE_Rx_Update(void);
+void UART1_BLE_Proc(void);
 
 
 #endif

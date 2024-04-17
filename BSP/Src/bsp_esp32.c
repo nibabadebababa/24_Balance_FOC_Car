@@ -1,35 +1,36 @@
 #include "bsp_esp32.h"
 #include "stdio.h"
 #include "string.h"
+#include "cmsis_os.h"
 
 #define 	TORQUE_MAX		12
 
-void UART6_Receive_Update(void)
+void UART6_DAPLink_Rx_Update(void)
 {
 	if(uart6_rxpointer !=0){
 		uint8_t temp = uart6_rxpointer;
-		HAL_Delay(1);
+		vTaskDelay(1);
 		if(temp == uart6_rxpointer)
-			UART6_Debug_Proc();
+			UART6_DAPLink_Proc();
 	}
 }
 
-void UART2_Receive_Update(void)
+void UART2_ESP32_Rx_Update(void)
 {
 	if(uart2_rxpointer !=0){
 		uint8_t temp = uart2_rxpointer;
-		HAL_Delay(1);
+		vTaskDelay(1);
 		if(temp == uart2_rxpointer)
 			UART2_ESP32_Proc();
 	}	
 }
 
-void UART6_Debug_Proc(void)
+void UART6_DAPLink_Proc(void)
 {
 	HAL_UART_Transmit(&huart2, uart6_rxdata, uart6_rxpointer, 10);
 	
 	uart6_rxpointer = 0;
-	memset(uart6_rxdata, 0, 10);
+	memset(uart6_rxdata, 0, UART_BUF_MAX);
 }
 
 void UART2_ESP32_Proc(void)
@@ -55,6 +56,5 @@ void Set_Motor_Torque(uint8_t motor, float torque)
 		sprintf(message, (char*)"B%.2f\n",torque);
 	
 	HAL_UART_Transmit(&huart2, (uint8_t*)message, strlen(message), 1);
-
 }
 

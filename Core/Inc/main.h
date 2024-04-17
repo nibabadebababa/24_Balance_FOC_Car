@@ -80,6 +80,10 @@ typedef struct {
 
 extern SYSTEM_TYPE_DEF sys;
 
+extern uint8_t uart1_rxdat;
+extern uint8_t uart1_rxdata[];
+extern uint8_t uart1_rxpointer;
+
 extern uint8_t uart2_rxdat;
 extern uint8_t uart2_rxdata[];
 extern uint8_t uart2_rxpointer;
