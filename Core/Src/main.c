@@ -18,24 +18,29 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "cmsis_os.h"
 #include "gpio.h"
 #include "i2c.h"
-#include "tim.h"
 #include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #ifdef CLION_COMPILER_FLAG
-#include "retarget.h" // keil中需要对此进行注�????
+#include "retarget.h"
 #endif
 
+#include "app_control.h"
+#include "app_foc.h"
+#include "app_x3.h"
 #include "bsp_OLED.h"
-#include "bsp_hmc.h"
-#include "bsp_motor.h"
-#include "bsp_mpu.h"
-#include "interface_mpu6050_dmp.h"
-
+#include "bsp_battry.h"
+#include "bsp_bluetooth.h"
+#include "bsp_dmp.h"
+#include "bsp_esp32.h"
+#include "bsp_hmc5883.h"
+#include "bsp_mpu6050.h"
+#include "bsp_x3.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,7 +61,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+SYSTEM_TYPE_DEF sys;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -68,7 +73,7 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void System_Init(void);
 /* USER CODE END 0 */
 
 /**
@@ -100,35 +105,16 @@ int main(void) {
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_TIM1_Init();
   MX_I2C1_Init();
   MX_USART2_UART_Init();
   MX_USART1_UART_Init();
+  MX_ADC1_Init();
+  MX_USART3_UART_Init();
+  MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
-  OLED_Init();
-  OLED_Display_On();
-  OLED_Clear();
-  OLED_ShowString(1, 1, (uint8_t *)"Lonng", 16);
-  OLED_ShowString(1, 3, (uint8_t *)"HaHaHaHaHaHa!", 16);
-
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
-
-  uint8_t data = 0x02;
-  HAL_I2C_Mem_Write(&hi2c1, (0x3C << 1) | 0, 0x02, I2C_MEMADD_SIZE_8BIT, &data,
-                    1, 0xff);
-  uint8_t read = 0;
-  HAL_Delay(70);
-  HAL_I2C_Mem_Read(&hi2c1, (0x3C << 1) | 1, 0x01, I2C_MEMADD_SIZE_8BIT, &read,
-                   1, 0xff);
-
-#ifdef CLION_COMPILER_FLAG
-  RetargetInit(&huart2); // 串口
-  RetargetInit(&huart1); // 蓝牙
-#endif
   Init_HMC5883L_HAL(&hi2c1);
+  System_Init();
   MPU6050_Init();
-
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -196,7 +182,38 @@ void SystemClock_Config(void) {
 }
 
 /* USER CODE BEGIN 4 */
+void System_Init(void) {
+  sys.bat = 0;
+  sys.print_dev = DAPLINK;
+#ifdef CLION_COMPILER_FLAG
+  if (sys.print_dev == ESP32) {
+    RetargetInit(&huart2); // 串口
+  } else if (sys.print_dev == X3) {
+    RetargetInit(&huart3); // 串口
+  } else if (sys.print_dev == BLE) {
+    RetargetInit(&huart1); // 串口
+  } else if (sys.print_dev == DAPLINK) {
+    RetargetInit(&huart6); // 串口
+  }
+#endif
+}
 
+#ifndef CLION_COMPILER_FLAG
+int fputc(int c, FILE *stream) {
+  UART_HandleTypeDef huart;
+  if (sys.print_dev == ESP32) {
+    huart = huart2;
+  } else if (sys.print_dev == X3) {
+    huart = huart3;
+  } else if (sys.print_dev == BLE) {
+    huart = huart1;
+  } else if (sys.print_dev == DAPLINK) {
+    huart = huart6;
+  }
+  HAL_UART_Transmit(&huart, (uint8_t *)&c, 1, 10);
+  return 1;
+}
+#endif
 /* USER CODE END 4 */
 
 /**

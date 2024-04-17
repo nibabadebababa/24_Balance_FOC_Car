@@ -1,7 +1,7 @@
 #ifndef __DMP_H__
 #define __DMP_H__
 
-// #include "sys.h"
+#include "main.h"
 
 #define q30 1073741824.0f
 
@@ -11,5 +11,8 @@ extern short gyro[3], accel[3];
 
 void MPU6050_Init(void);
 void MPU6050_Pose(void);
+int8_t i2cwrite(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data);
+int8_t i2cread(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf);
+void get_ms(unsigned long *time);
 
 #endif

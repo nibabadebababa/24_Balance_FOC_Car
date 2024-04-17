@@ -1,5 +1,5 @@
 #include "bsp_dmp.h"
-#include "bsp_mpu.h"
+#include "bsp_mpu6050.h"
 #include "i2c.h"
 #include "inv_mpu.h"
 #include "inv_mpu_dmp_motion_driver.h"
@@ -83,7 +83,6 @@ void MPU6050_Init(void) {
 }
 
 void MPU6050_Pose(void) {
-
   dmp_read_fifo(gyro, accel, quat, &sensor_timestamp, &sensors, &more);
   /* Gyro and accel data are written to the FIFO by the DMP in chip frame and
    *hardware units. This behavior is convenient because it keeps the gyro and
@@ -112,7 +111,29 @@ void MPU6050_Pose(void) {
         57.3; // yaw
   }
   // 将dmp的值传给MPU6050结构体
-  Mpu6050_Data.Pitch = Pitch;
-  Mpu6050_Data.Roll = Roll;
-  Mpu6050_Data.Yaw = Yaw;
+  mpu.Pitch = Pitch;
+  mpu.Roll = Roll;
+  mpu.Yaw = Yaw;
 }
+
+int8_t i2cwrite(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
+  if (HAL_I2C_Mem_Write(&hi2c1, addr, reg, I2C_MEMADD_SIZE_8BIT, data, len,
+                        1000) == HAL_OK) // 传输成功
+  {
+    return 0;
+  } else {
+    return -1;
+  }
+  // return FALSE;
+}
+int8_t i2cread(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf) {
+  if (HAL_I2C_Mem_Read(&hi2c1, addr, reg, I2C_MEMADD_SIZE_8BIT, buf, len,
+                       1000) == HAL_OK) {
+    return 0;
+  } else {
+    return -1;
+  }
+  // return FALSE;
+}
+
+void get_ms(unsigned long *time) {}

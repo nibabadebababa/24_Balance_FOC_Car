@@ -112,23 +112,4 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 }
 
 /* USER CODE BEGIN 1 */
-int8_t i2cwrite(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
-  if (HAL_I2C_Mem_Write(&hi2c1, addr, reg, I2C_MEMADD_SIZE_8BIT, data, len,
-                        1000) == HAL_OK) // 传输成功
-  {
-    return 0;
-  } else {
-    return -1;
-  }
-  // return FALSE;
-}
-int8_t i2cread(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf) {
-  if (HAL_I2C_Mem_Read(&hi2c1, addr, reg, I2C_MEMADD_SIZE_8BIT, buf, len,
-                       1000) == HAL_OK) {
-    return 0;
-  } else {
-    return -1;
-  }
-  // return FALSE;
-}
 /* USER CODE END 1 */

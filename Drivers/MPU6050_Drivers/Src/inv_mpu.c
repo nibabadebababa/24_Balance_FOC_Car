@@ -20,7 +20,8 @@
 #include "inv_mpu.h"
 #include "i2c.h"
 // #include "delay.h"
-#include "bsp_mpu.h"
+#include "bsp_dmp.h"
+#include "bsp_mpu6050.h"
 #include "stm32f4xx.h"
 #include "usart.h"
 #include <math.h>

@@ -19,16 +19,19 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
-#include "task.h"
-#include "main.h"
 #include "cmsis_os.h"
+#include "main.h"
+#include "task.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "Controller.h"
-#include "bsp_hmc.h"
+#include "app_control.h"
+#include "bsp_battry.h"
+#include "bsp_dmp.h"
+#include "bsp_esp32.h"
+#include "bsp_hmc5883.h"
 #include "bsp_motor.h"
-#include "interface_mpu6050_dmp.h"
+#include "bsp_mpu6050.h"
 #include "stdio.h"
 /* USER CODE END Includes */
 
@@ -54,23 +57,23 @@
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "defaultTask",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal1,
 };
 /* Definitions for myTask02 */
 osThreadId_t myTask02Handle;
 const osThreadAttr_t myTask02_attributes = {
-  .name = "myTask02",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal1,
+    .name = "myTask02",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for myTask03 */
 osThreadId_t myTask03Handle;
 const osThreadAttr_t myTask03_attributes = {
-  .name = "myTask03",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "myTask03",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -84,10 +87,10 @@ void StartTask03(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
   /* USER CODE END Init */
@@ -110,7 +113,8 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  defaultTaskHandle =
+      osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* creation of myTask02 */
   myTask02Handle = osThreadNew(StartTask02, NULL, &myTask02_attributes);
@@ -125,7 +129,6 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
-
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -135,11 +138,9 @@ void MX_FREERTOS_Init(void) {
  * @retval None
  */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
-{
+void StartDefaultTask(void *argument) {
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
-  extern TIM_HandleTypeDef htim1;
   BaseType_t preTick = xTaskGetTickCount();
   //  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   //  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
@@ -149,10 +150,11 @@ void StartDefaultTask(void *argument)
   //  motor_set_speed(MOTOR0, -10);
   //  motor_set_speed(MOTOR1, -10);
   for (;;) {
-    //    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
-    //    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
-    HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
-    vTaskDelayUntil(&preTick, 500); // 周期500ms
+    Battry_GetVoltage();
+    MPU6050_Pose();
+    //    Set_Motor_Torque(MOTOR0, 10);
+    //    vTaskDelayUntil(&preTick, 100);
+    vTaskDelay(10);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -164,16 +166,13 @@ void StartDefaultTask(void *argument)
  * @retval None
  */
 /* USER CODE END Header_StartTask02 */
-void StartTask02(void *argument)
-{
+void StartTask02(void *argument) {
   /* USER CODE BEGIN StartTask02 */
-  struct HMC5883L_Data HMC_temp; // 磁场传感器结构体
-  double angle;                  // 偏航角
-  extern I2C_HandleTypeDef hi2c1;
-  extern float Pitch, Roll, Yaw;
   /* Infinite loop */
   for (;;) {
 
+    read_hmc5883l_HAL(&hi2c1, &mag);
+    vTaskDelay(100);
     /** hmc使用 */
     //    HAL_Delay(14); // 100Hz太快
     //    angle = read_hmc5883l_HAL(&hi2c1, &HMC_temp);
@@ -181,9 +180,9 @@ void StartTask02(void *argument)
     //    printf("Hello World!\r\n");
 
     /** mpu6050使用 */
-    vTaskDelay(1); // 100Hz
-    MPU6050_Pose();
-    printf(" %f, %f,  %f\r\n", Pitch, Roll, Yaw);
+    //    vTaskDelay(1); // 100Hz
+    //    MPU6050_Pose();
+    //    printf(" %f, %f,  %f\r\n", Pitch, Roll, Yaw);
     //    osDelay(1);
   }
   /* USER CODE END StartTask02 */
@@ -196,17 +195,18 @@ void StartTask02(void *argument)
  * @retval None
  */
 /* USER CODE END Header_StartTask03 */
-void StartTask03(void *argument)
-{
+void StartTask03(void *argument) {
   /* USER CODE BEGIN StartTask03 */
-  int speed = 0;
+  //  int speed = 0;
   /* Infinite loop */
   for (;;) {
-    speed = Vertical_PID_PD();
-    motor_set_speed(MOTOR0, speed);
-    motor_set_speed(MOTOR1, speed);
-    //    osDelay(1);
-    vTaskDelay(1);
+    printf("%.1f,%.1f,%.1f,%.1f\n", mpu.Pitch, mpu.Roll, mpu.Yaw, mag.angle);
+    vTaskDelay(100);
+    //    speed = Vertical_PID_PD();
+    //    motor_set_speed(MOTOR0, speed);
+    //    motor_set_speed(MOTOR1, speed);
+    //    //    osDelay(1);
+    //    vTaskDelay(1);
   }
   /* USER CODE END StartTask03 */
 }
@@ -214,4 +214,3 @@ void StartTask03(void *argument)
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 /* USER CODE END Application */
-

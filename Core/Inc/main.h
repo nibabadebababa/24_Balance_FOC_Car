@@ -31,7 +31,6 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "bsp_mpu.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -56,13 +55,27 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define LED_ACTION_Pin GPIO_PIN_12
+#define LED_ACTION_Pin GPIO_PIN_8
 #define LED_ACTION_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 #define MOTOR0 0
 #define MOTOR1 1
 #define MOTOR_MAX_SPEED 400
+
+typedef enum {
+  ESP32 = 0,
+  BLE = 1,
+  X3 = 2,
+  DAPLINK = 3,
+} PRINTF_ENUM_TYPE;
+
+typedef struct {
+  float bat;
+  PRINTF_ENUM_TYPE print_dev;
+} SYSTEM_TYPE_DEF;
+
+extern SYSTEM_TYPE_DEF sys;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
