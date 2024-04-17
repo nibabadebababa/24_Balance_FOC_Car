@@ -33,7 +33,6 @@
 #include "app_control.h"
 #include "app_foc.h"
 #include "app_x3.h"
-#include "bsp_OLED.h"
 #include "bsp_battry.h"
 #include "bsp_bluetooth.h"
 #include "bsp_dmp.h"
@@ -62,6 +61,17 @@
 
 /* USER CODE BEGIN PV */
 SYSTEM_TYPE_DEF sys;
+uint8_t uart2_rxdat = 0;
+uint8_t uart2_rxdata[UART_BUF_MAX] = {0};
+uint8_t uart2_rxpointer = 0;
+
+uint8_t uart3_rxdat;
+uint8_t uart3_rxdata[UART_BUF_MAX] = {0};
+uint8_t uart3_rxpointer = 0;
+
+uint8_t uart6_rxdat = 0;
+uint8_t uart6_rxdata[UART_BUF_MAX] = {0};
+uint8_t uart6_rxpointer = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -112,9 +122,18 @@ int main(void) {
   MX_USART3_UART_Init();
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
-  Init_HMC5883L_HAL(&hi2c1);
-  System_Init();
-  MPU6050_Init();
+//  Init_HMC5883L_HAL(&hi2c1);
+#ifdef CLION_COMPILER_FLAG
+//  RetargetInit(&huart6); // ÷ÿ∂®œÚ»›“◊µº÷¬À¿ª˙
+#endif
+  printf("Hello World\n");
+  HAL_UART_Receive_IT(&huart2, &uart2_rxdat, 1);
+  HAL_UART_Receive_IT(&huart3, &uart3_rxdat, 1);
+  HAL_UART_Receive_IT(&huart6, &uart6_rxdat, 1);
+
+  //	Init_HMC5883L_HAL(&hi2c1);
+  //	MPU6050_Init();
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -182,38 +201,7 @@ void SystemClock_Config(void) {
 }
 
 /* USER CODE BEGIN 4 */
-void System_Init(void) {
-  sys.bat = 0;
-  sys.print_dev = DAPLINK;
-#ifdef CLION_COMPILER_FLAG
-  if (sys.print_dev == ESP32) {
-    RetargetInit(&huart2); // ‰∏≤Âè£
-  } else if (sys.print_dev == X3) {
-    RetargetInit(&huart3); // ‰∏≤Âè£
-  } else if (sys.print_dev == BLE) {
-    RetargetInit(&huart1); // ‰∏≤Âè£
-  } else if (sys.print_dev == DAPLINK) {
-    RetargetInit(&huart6); // ‰∏≤Âè£
-  }
-#endif
-}
 
-#ifndef CLION_COMPILER_FLAG
-int fputc(int c, FILE *stream) {
-  UART_HandleTypeDef huart;
-  if (sys.print_dev == ESP32) {
-    huart = huart2;
-  } else if (sys.print_dev == X3) {
-    huart = huart3;
-  } else if (sys.print_dev == BLE) {
-    huart = huart1;
-  } else if (sys.print_dev == DAPLINK) {
-    huart = huart6;
-  }
-  HAL_UART_Transmit(&huart, (uint8_t *)&c, 1, 10);
-  return 1;
-}
-#endif
 /* USER CODE END 4 */
 
 /**

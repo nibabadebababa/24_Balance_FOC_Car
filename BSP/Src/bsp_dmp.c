@@ -136,4 +136,7 @@ int8_t i2cread(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf) {
   // return FALSE;
 }
 
-void get_ms(unsigned long *time) {}
+void get_ms(unsigned long *time)
+{
+	
+}

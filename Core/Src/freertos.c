@@ -30,7 +30,6 @@
 #include "bsp_dmp.h"
 #include "bsp_esp32.h"
 #include "bsp_hmc5883.h"
-#include "bsp_motor.h"
 #include "bsp_mpu6050.h"
 #include "stdio.h"
 /* USER CODE END Includes */
@@ -149,12 +148,37 @@ void StartDefaultTask(void *argument) {
   //
   //  motor_set_speed(MOTOR0, -10);
   //  motor_set_speed(MOTOR1, -10);
+
+  //  uint16_t delay = 1;
+  //  Set_Motor_Torque(MOTOR0, 0);
+  //  HAL_Delay(1000);
+  //  Set_Motor_Torque(MOTOR1, 1);
+  //  HAL_Delay(delay);
+  //  Set_Motor_Torque(MOTOR0, 1);
+  //  HAL_Delay(2000);
+  //
+  //  Set_Motor_Torque(MOTOR1, 2);
+  //  HAL_Delay(delay);
+  //  Set_Motor_Torque(MOTOR0, 2);
+  //  HAL_Delay(2000);
+  //
+  //  Set_Motor_Torque(MOTOR1, 0);
+  //  HAL_Delay(delay);
+  //  Set_Motor_Torque(MOTOR0, 0);
+  //  HAL_Delay(1000);
+  //
+  //  Set_Motor_Torque(MOTOR1, -2);
+  //  HAL_Delay(delay);
+  //  Set_Motor_Torque(MOTOR0, -2);
+  //  HAL_Delay(2000);
+  //
+  //  Set_Motor_Torque(MOTOR1, 0);
+  //  HAL_Delay(delay);
   for (;;) {
-    Battry_GetVoltage();
-    MPU6050_Pose();
     //    Set_Motor_Torque(MOTOR0, 10);
     //    vTaskDelayUntil(&preTick, 100);
-    vTaskDelay(10);
+    UART2_Receive_Update();
+    UART6_Receive_Update();
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -171,8 +195,6 @@ void StartTask02(void *argument) {
   /* Infinite loop */
   for (;;) {
 
-    read_hmc5883l_HAL(&hi2c1, &mag);
-    vTaskDelay(100);
     /** hmcÊ¹ÓÃ */
     //    HAL_Delay(14); // 100HzÌ«¿ì
     //    angle = read_hmc5883l_HAL(&hi2c1, &HMC_temp);
@@ -200,8 +222,6 @@ void StartTask03(void *argument) {
   //  int speed = 0;
   /* Infinite loop */
   for (;;) {
-    printf("%.1f,%.1f,%.1f,%.1f\n", mpu.Pitch, mpu.Roll, mpu.Yaw, mag.angle);
-    vTaskDelay(100);
     //    speed = Vertical_PID_PD();
     //    motor_set_speed(MOTOR0, speed);
     //    motor_set_speed(MOTOR1, speed);

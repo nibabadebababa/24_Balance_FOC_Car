@@ -59,9 +59,10 @@ void Error_Handler(void);
 #define LED_ACTION_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
+#define PrintChar printf
+#define UART_BUF_MAX 20
 #define MOTOR0 0
 #define MOTOR1 1
-#define MOTOR_MAX_SPEED 400
 
 typedef enum {
   ESP32 = 0,
@@ -73,9 +74,29 @@ typedef enum {
 typedef struct {
   float bat;
   PRINTF_ENUM_TYPE print_dev;
+  float V1;
+  float V2;
 } SYSTEM_TYPE_DEF;
 
 extern SYSTEM_TYPE_DEF sys;
+
+extern uint8_t uart2_rxdat;
+extern uint8_t uart2_rxdata[];
+extern uint8_t uart2_rxpointer;
+
+extern uint8_t uart3_rxdat;
+extern uint8_t uart3_rxdata[];
+extern uint8_t uart3_rxpointer;
+
+extern uint8_t uart6_rxdat;
+extern uint8_t uart6_rxdata[];
+extern uint8_t uart6_rxpointer;
+
+extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef huart3;
+extern UART_HandleTypeDef huart6;
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
