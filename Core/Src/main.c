@@ -132,8 +132,7 @@ int main(void)
 #ifdef CLION_COMPILER_FLAG
 //  RetargetInit(&huart6); // 重定向容易导致死机
 #endif
-//  Init_HMC5883L_HAL(&hi2c1);
-  printf("Hello World\n");
+  
   HAL_UART_Receive_IT(&huart1, &uart1_rxdat, 1);
   HAL_UART_Receive_IT(&huart2, &uart2_rxdat, 1);
   HAL_UART_Receive_IT(&huart3, &uart3_rxdat, 1);
@@ -141,7 +140,6 @@ int main(void)
 
   //	Init_HMC5883L_HAL(&hi2c1);
   //	MPU6050_Init();
-
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -149,7 +147,7 @@ int main(void)
 
   /* Call init function for freertos objects (in cmsis_os2.c) */
   MX_FREERTOS_Init();
-
+	
   /* Start scheduler */
   osKernelStart();
 

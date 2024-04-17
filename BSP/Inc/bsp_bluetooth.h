@@ -6,7 +6,7 @@
 
 void UART1_BLE_Rx_Update(void);
 void UART1_BLE_Proc(void);
-
+void UART1_BLE_Print(const char* message);
 
 #endif
 

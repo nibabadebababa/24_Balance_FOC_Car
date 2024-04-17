@@ -22,6 +22,7 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bsp_bluetooth.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -186,8 +187,10 @@ void USART1_IRQHandler(void)
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */
-	uart1_rxdata[uart1_rxpointer++] = uart1_rxdat; 
-	HAL_UART_Receive_IT(&huart1,&uart1_rxdat, 1);
+	uart1_rxdata[uart1_rxpointer++] = uart1_rxdat;
+	uart1_rxpointer %= UART_BUF_MAX;
+	
+	HAL_UART_Receive_IT(&huart1, &uart1_rxdat, 1);
   /* USER CODE END USART1_IRQn 1 */
 }
 
@@ -202,6 +205,7 @@ void USART2_IRQHandler(void)
   HAL_UART_IRQHandler(&huart2);
   /* USER CODE BEGIN USART2_IRQn 1 */
   uart2_rxdata[uart2_rxpointer++] = uart2_rxdat;
+	uart2_rxpointer %= UART_BUF_MAX;
   HAL_UART_Receive_IT(&huart2, &uart2_rxdat, 1);
   /* USER CODE END USART2_IRQn 1 */
 }
@@ -217,6 +221,7 @@ void USART3_IRQHandler(void)
   HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_IRQn 1 */
   uart3_rxdata[uart3_rxpointer++] = uart3_rxdat;
+	uart3_rxpointer %= UART_BUF_MAX;
   HAL_UART_Receive_IT(&huart3, &uart3_rxdat, 1);
   /* USER CODE END USART3_IRQn 1 */
 }
@@ -232,6 +237,7 @@ void USART6_IRQHandler(void)
   HAL_UART_IRQHandler(&huart6);
   /* USER CODE BEGIN USART6_IRQn 1 */
   uart6_rxdata[uart6_rxpointer++] = uart6_rxdat;
+	uart6_rxpointer %= UART_BUF_MAX;
   HAL_UART_Receive_IT(&huart6, &uart6_rxdat, 1);
   /* USER CODE END USART6_IRQn 1 */
 }

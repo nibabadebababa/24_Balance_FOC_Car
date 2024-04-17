@@ -10,8 +10,7 @@ void UART6_DAPLink_Rx_Update(void)
 	if(uart6_rxpointer !=0){
 		uint8_t temp = uart6_rxpointer;
 		vTaskDelay(1);
-		if(temp == uart6_rxpointer)
-			UART6_DAPLink_Proc();
+		if(temp == uart6_rxpointer) UART6_DAPLink_Proc();
 	}
 }
 
@@ -20,8 +19,7 @@ void UART2_ESP32_Rx_Update(void)
 	if(uart2_rxpointer !=0){
 		uint8_t temp = uart2_rxpointer;
 		vTaskDelay(1);
-		if(temp == uart2_rxpointer)
-			UART2_ESP32_Proc();
+		if(temp == uart2_rxpointer) UART2_ESP32_Proc();
 	}	
 }
 
