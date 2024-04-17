@@ -58,5 +58,5 @@ Drivers/STM32F4xx_HAL_Driver
 Middlewares/
 MDK-ARM/
 硬件资料/
-retarget.*
-Core/Src/syscalls.c
+#retarget.*
+#Core/Src/syscalls.c
