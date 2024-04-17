@@ -26,12 +26,16 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#ifdef CLION_COMPILER_FLAG
+#include "retarget.h" // keil中需要对此进行注�????
+#endif
+
 #include "bsp_OLED.h"
 #include "bsp_hmc.h"
 #include "bsp_motor.h"
 #include "bsp_mpu.h"
 #include "interface_mpu6050_dmp.h"
-#include "retarget.h" // keil中需要对此进行注�????
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -117,8 +121,11 @@ int main(void) {
   HAL_Delay(70);
   HAL_I2C_Mem_Read(&hi2c1, (0x3C << 1) | 1, 0x01, I2C_MEMADD_SIZE_8BIT, &read,
                    1, 0xff);
+
+#ifdef CLION_COMPILER_FLAG
   RetargetInit(&huart2); // 串口
   RetargetInit(&huart1); // 蓝牙
+#endif
   Init_HMC5883L_HAL(&hi2c1);
   MPU6050_Init();
 

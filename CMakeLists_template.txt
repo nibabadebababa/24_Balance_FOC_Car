@@ -52,6 +52,7 @@ endif ()
 include_directories(${includes} BSP/Inc Drivers/MPU6050_Drivers/Inc Libraries/Inc Applications/Inc)
 
 add_definitions(${defines})
+add_definitions(-DCLION_COMPILER_FLAG) # Keil compatibility
 
 file(GLOB_RECURSE SOURCES ${sources} "BSP/*.*" "Drivers/MPU6050_Drivers/*.*" "Libraries/*.*" "Applications/*.*")
 
