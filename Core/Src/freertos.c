@@ -145,16 +145,36 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
   BaseType_t preTick = xTaskGetTickCount();
-	
-	
+//  while(sys.Motor_Ready==0){
+//    
+//  }
+  float PID_B_out = 0,PID_V_out=0;
+  float out=0;
+  float a = 0.9;
   for (;;) {
     //    Set_Motor_Torque(MOTOR0, 10);
-	UART1_BLE_Rx_Update();
-    //UART2_ESP32_Rx_Update();
-	//UART3_X3_Rx_Update();
-    //UART6_DAPLink_Rx_Update();
-	 //UART1_BLE_Print("Hello World!\r\n");
-	vTaskDelay(1);
+    MPU6050_Pose();
+    read_hmc5883l_HAL(&hi2c1, &mag);
+    MPU6050_Read_Gyro();
+    sys.Pitch = mpu.Pitch;
+    sys.Roll = mpu.Roll;
+    sys.Yaw = a*(mpu.Yaw+243) + (1-a)*mag.angle;
+    sys.Ax = mpu.Accel_X;
+    sys.Ay = mpu.Accel_Y;
+    sys.Az = mpu.Accel_Z;
+    
+    sys.Gx = mpu.Gyro_X;
+    sys.Gy = mpu.Gyro_Y;
+    sys.Gz = mpu.Gyro_Z;
+//    printf("%.1f,%.1f,%.1f\n",mpu.Pitch, mpu.Roll, mpu.Yaw);
+    HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
+    PID_B_out = Balance_PID_Update();
+    PID_V_out = Velocity_PID_Update(0);
+    out = PID_B_out + PID_V_out;
+    Set_Motor_Torque(MOTOR0, out);
+    Set_Motor_Torque(MOTOR1, out);
+    vTaskDelay(1);
+
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -169,21 +189,14 @@ void StartDefaultTask(void *argument)
 void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
+  float PID_out = 0;
+  
   /* Infinite loop */
   for (;;) {
-	 HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
-	 vTaskDelay(100);
-    /** hmc使用 */
-    //    HAL_Delay(14); // 100Hz太快
-    //    angle = read_hmc5883l_HAL(&hi2c1, &HMC_temp);
-    //    printf("angle : %f\r\n", angle);
-    //    printf("Hello World!\r\n");
-
-    /** mpu6050使用 */
-    //    vTaskDelay(1); // 100Hz
-    //    MPU6050_Pose();
-    //    printf(" %f, %f,  %f\r\n", Pitch, Roll, Yaw);
-    //    osDelay(1);
+//	  PID_out = Balance_PID_Update();
+//    Set_Motor_Torque(MOTOR0, PID_out);
+//    Set_Motor_Torque(MOTOR1, PID_out);
+//    vTaskDelay(1);
   }
   /* USER CODE END StartTask02 */
 }
@@ -201,8 +214,10 @@ void StartTask03(void *argument)
   //  int speed = 0;
   /* Infinite loop */
   for (;;) {
-	
-	  
+    UART1_BLE_Rx_Update();
+    UART2_ESP32_Rx_Update();
+    UART3_X3_Rx_Update();
+    UART6_DAPLink_Rx_Update();
   }
   /* USER CODE END StartTask03 */
 }

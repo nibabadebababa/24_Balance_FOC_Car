@@ -40,6 +40,8 @@
 #include "bsp_hmc5883.h"
 #include "bsp_mpu6050.h"
 #include "bsp_x3.h"
+#include "stdio.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -138,8 +140,11 @@ int main(void)
   HAL_UART_Receive_IT(&huart3, &uart3_rxdat, 1);
   HAL_UART_Receive_IT(&huart6, &uart6_rxdat, 1);
 
-  //	Init_HMC5883L_HAL(&hi2c1);
-  //	MPU6050_Init();
+  Init_HMC5883L_HAL(&hi2c1);
+  MPU6050_Init();
+  System_Init();
+  Set_Motor_Torque(MOTOR0,0);
+	Set_Motor_Torque(MOTOR1,0);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -210,6 +215,22 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void System_Init(void)
+{
+  sys.bat = 0;
+  sys.print_dev = DAPLINK;
+  sys.V0 = 0;
+  sys.V1 = 0;
+  sys.Motor_Ready = 0;
+  sys.X3_Ready = 0;
+}
+
+int fputc(int c, FILE * stream)
+{
+  HAL_UART_Transmit(&huart6, (uint8_t*)&c,1,10);
+  return 1;
+}
 
 /* USER CODE END 4 */
 

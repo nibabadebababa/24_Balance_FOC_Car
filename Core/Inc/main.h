@@ -52,6 +52,8 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
+void System_Init(void);
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -72,11 +74,26 @@ typedef enum {
 } PRINTF_ENUM_TYPE;
 
 typedef struct {
-  float bat;
+  
   PRINTF_ENUM_TYPE print_dev;
-  float V1;
-  float V2;
-} SYSTEM_TYPE_DEF;
+  uint8_t Motor_Ready;  // 电机FOC算法磁编码器自检
+  uint8_t X3_Ready;     // X3启动launch文件与串口节点
+  
+  /* 系统状态 */
+  float   Yaw;
+  float   Pitch;
+  float   Roll;
+  float   Gx;
+  float   Gy;
+  float   Gz;
+  float   Ax;
+  float   Ay;
+  float   Az;
+  float   V0;   // 电机0速度
+  float   V1;   // 电机1速度
+  float   bat;  // 电池电压
+  
+}SYSTEM_TYPE_DEF;
 
 extern SYSTEM_TYPE_DEF sys;
 

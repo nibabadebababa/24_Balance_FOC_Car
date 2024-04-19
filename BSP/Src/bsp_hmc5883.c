@@ -11,14 +11,13 @@ int g85_makeuint16(int msb, int lsb) {
 
 // 初始化和设置HMC5883L
 void Init_HMC5883L_HAL(I2C_HandleTypeDef *hi2c1) {
-  unsigned char cdata[3] = {0x70, 0x38, 0X00};
+  unsigned char cdata[3] = {0x78, 0x38, 0X00};
   HAL_I2C_Mem_Write(hi2c1, HMC5883L_Addr, HMC5883l_CONFIG_A,
-                    I2C_MEMADD_SIZE_8BIT, cdata, 1, 1000); //
+                    I2C_MEMADD_SIZE_8BIT, cdata, 1, 1000);     // 75Hz
   HAL_I2C_Mem_Write(hi2c1, HMC5883L_Addr, HMC5883l_CONFIG_B,
                     I2C_MEMADD_SIZE_8BIT, cdata + 1, 1, 1000); // 设置增益，
   HAL_I2C_Mem_Write(hi2c1, HMC5883L_Addr, HMC5883l_MODECONFIG,
-                    I2C_MEMADD_SIZE_8BIT, cdata + 2, 1,
-                    1000); // 设置测量模式，连续测量模式
+                    I2C_MEMADD_SIZE_8BIT, cdata + 2, 1,1000);  // 设置测量模式，连续测量模式
 }
 
 /**** 读取HMC5883L的磁场角度  */

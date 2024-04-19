@@ -6,10 +6,16 @@
 #include "main.h"
 #include "stdio.h"
 
-#define Mechanical_balance 1.0f // 机械平衡角度
-#define PID_Balance_Kp 27.0f    // 直立控制比例系数
-#define PID_Balance_Kd 0.6f     // 直立控制微分系数
 
-int Vertical_PID_PD(void);
+typedef struct{
+  float Kp;
+  float Ki;
+  float Kd;
+}PID_TYPE_DEF;
+
+
+float Balance_PID_Update(void);
+float Velocity_PID_Update(float target_v);
+
 
 #endif

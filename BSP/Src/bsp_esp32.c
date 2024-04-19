@@ -3,7 +3,12 @@
 #include "string.h"
 #include "cmsis_os.h"
 
-#define 	TORQUE_MAX		12
+#define 	TORQUE_MAX		120
+#define 	V_BUF_LEN		5
+
+float Velocity_Buf0[V_BUF_LEN];
+float Velocity_Buf1[V_BUF_LEN];
+uint8_t buf_pointer=0;
 
 void UART6_DAPLink_Rx_Update(void)
 {
@@ -33,8 +38,20 @@ void UART6_DAPLink_Proc(void)
 
 void UART2_ESP32_Proc(void)
 {
-	HAL_UART_Transmit(&huart6, uart2_rxdata, uart2_rxpointer, 10);
-	sscanf((char*)uart2_rxdata, "%f,%f\n",&sys.V1,&sys.V2);
+  if(sys.Motor_Ready == 0){
+    if( strcmp((char*)uart2_rxdata, "OK") == 0 ){
+        HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_RESET);
+        sys.Motor_Ready = 1;
+    }
+  } 
+  else{
+    sscanf((char*)uart2_rxdata, "%f,%f\n",&Velocity_Buf0[buf_pointer],&Velocity_Buf1[buf_pointer]);
+    buf_pointer++;
+    buf_pointer%=V_BUF_LEN;
+    sys.V0 = Velocity_Filter(Velocity_Buf0);
+    sys.V1 = Velocity_Filter(Velocity_Buf1);
+  }
+
 	uart2_rxpointer = 0;
 	memset(uart2_rxdata, 0, UART_BUF_MAX);	
 }
@@ -49,10 +66,22 @@ void Set_Motor_Torque(uint8_t motor, float torque)
 		torque = (torque<-TORQUE_MAX)?(-TORQUE_MAX):(torque);
 
 	if(motor == MOTOR0)
-		sprintf(message, (char*)"A%.2f\n",torque);
-	else if(motor == MOTOR1)
-		sprintf(message, (char*)"B%.2f\n",torque);
+		sprintf(message, (char*)"A%.2f\n",torque/10.0f);
+	else if(motor == MOTOR1){
+		sprintf(message, (char*)"B%.2f\n",-torque/10.0f);
+	}
+		
 	
 	HAL_UART_Transmit(&huart2, (uint8_t*)message, strlen(message), 1);
+}
+
+float Velocity_Filter(float* buffer)
+{
+	float sum=0;
+	uint8_t i;
+	for(i=0;i<V_BUF_LEN;i++)
+		sum += buffer[i];
+	
+	return (sum/V_BUF_LEN);
 }
 
