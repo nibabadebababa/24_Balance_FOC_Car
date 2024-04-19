@@ -26,7 +26,7 @@ int g85_makeuint16(int msb, int lsb);
 void Init_HMC5883L_HAL(I2C_HandleTypeDef *hi2c1);
 
 /**** ∂¡»°¥≈≥°Ω«∂»  */
-float read_hmc5883l_HAL(I2C_HandleTypeDef *hi2c1,
+float HMC5883_Get_Yaw(I2C_HandleTypeDef *hi2c1,
                         struct HMC5883L_Data *VL_temp);
 
 

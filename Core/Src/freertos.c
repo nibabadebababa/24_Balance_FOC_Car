@@ -45,6 +45,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+#define VELOCITY_DEBUG    // 不等待电机自检完成，直接接收速度
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -145,34 +147,23 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
   BaseType_t preTick = xTaskGetTickCount();
+  
 //  while(sys.Motor_Ready==0){
 //    
 //  }
-  float PID_B_out = 0,PID_V_out=0;
-  float out=0;
-  float a = 0.9;
+  
   for (;;) {
-    //    Set_Motor_Torque(MOTOR0, 10);
-    MPU6050_Pose();
-    read_hmc5883l_HAL(&hi2c1, &mag);
+    MPU6050_Get_Pose();
+    HMC5883_Get_Yaw(&hi2c1, &mag);
     MPU6050_Read_Gyro();
-    sys.Pitch = mpu.Pitch;
-    sys.Roll = mpu.Roll;
-    sys.Yaw = a*(mpu.Yaw+243) + (1-a)*mag.angle;
-    sys.Ax = mpu.Accel_X;
-    sys.Ay = mpu.Accel_Y;
-    sys.Az = mpu.Accel_Z;
-    
-    sys.Gx = mpu.Gyro_X;
-    sys.Gy = mpu.Gyro_Y;
-    sys.Gz = mpu.Gyro_Z;
+
 //    printf("%.1f,%.1f,%.1f\n",mpu.Pitch, mpu.Roll, mpu.Yaw);
-    HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
-    PID_B_out = Balance_PID_Update();
-    PID_V_out = Velocity_PID_Update(0);
-    out = PID_B_out + PID_V_out;
-    Set_Motor_Torque(MOTOR0, out);
-    Set_Motor_Torque(MOTOR1, out);
+
+//    PID_B_out = Balance_PID_Update();
+//    PID_V_out = Velocity_PID_Update(0);
+//    out = PID_B_out + PID_V_out;
+//    Set_Motor_Torque(MOTOR0, out);
+//    Set_Motor_Torque(MOTOR1, out);
     vTaskDelay(1);
 
   }
@@ -189,7 +180,6 @@ void StartDefaultTask(void *argument)
 void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
-  float PID_out = 0;
   
   /* Infinite loop */
   for (;;) {
@@ -197,6 +187,8 @@ void StartTask02(void *argument)
 //    Set_Motor_Torque(MOTOR0, PID_out);
 //    Set_Motor_Torque(MOTOR1, PID_out);
 //    vTaskDelay(1);
+    HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
+    vTaskDelay(100);
   }
   /* USER CODE END StartTask02 */
 }
@@ -224,5 +216,43 @@ void StartTask03(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+
+void System_Init(void)
+{
+  sys.bat = 0;
+  sys.print_dev = DAPLINK;
+  sys.V0 = 0;
+  sys.V1 = 0;
+  sys.Motor_Ready = 0;
+  sys.X3_Ready = 0;
+}
+
+void System_Get_Pose(void)
+{
+  MPU6050_Get_Pose();
+  MPU6050_Read_Gyro();
+  MPU6050_Read_Accel();
+  sys.Ax = mpu.Accel_X;
+  sys.Ay = mpu.Accel_Y;
+  sys.Az = mpu.Accel_Z;
+  sys.Gx = mpu.Gyro_X;
+  sys.Gy = mpu.Gyro_Y;
+  sys.Gz = mpu.Gyro_Z;
+  sys.Pitch = mpu.Pitch;
+  sys.Roll = mpu.Roll;
+}
+
+void System_Get_Yaw(void)
+{
+  float a = 0.9;
+  HMC5883_Get_Yaw(&hi2c1, &mag);
+  sys.Yaw = a*(mpu.Yaw+243) + (1-a)*mag.angle;
+}
+
+void System_Get_Battry(void)
+{
+  Battry_GetVoltage();
+}
+
 /* USER CODE END Application */
 

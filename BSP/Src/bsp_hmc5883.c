@@ -21,7 +21,7 @@ void Init_HMC5883L_HAL(I2C_HandleTypeDef *hi2c1) {
 }
 
 /**** 读取HMC5883L的磁场角度  */
-float read_hmc5883l_HAL(I2C_HandleTypeDef *hi2c1,
+float HMC5883_Get_Yaw(I2C_HandleTypeDef *hi2c1,
                         struct HMC5883L_Data *VL_temp) {
   float fangle;
   int x, y;

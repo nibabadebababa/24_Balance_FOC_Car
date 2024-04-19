@@ -82,7 +82,7 @@ void MPU6050_Init(void) {
   }
 }
 
-void MPU6050_Pose(void) {
+void MPU6050_Get_Pose(void) {
   dmp_read_fifo(gyro, accel, quat, &sensor_timestamp, &sensors, &more);
   /* Gyro and accel data are written to the FIFO by the DMP in chip frame and
    *hardware units. This behavior is convenient because it keeps the gyro and

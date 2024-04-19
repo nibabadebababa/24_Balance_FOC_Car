@@ -216,15 +216,7 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-void System_Init(void)
-{
-  sys.bat = 0;
-  sys.print_dev = DAPLINK;
-  sys.V0 = 0;
-  sys.V1 = 0;
-  sys.Motor_Ready = 0;
-  sys.X3_Ready = 0;
-}
+
 
 int fputc(int c, FILE * stream)
 {

@@ -1,49 +1,105 @@
 #include "app_control.h"
+#include "bsp_esp32.h"
+
 
 #define   OUTPUT_MAX  100
 #define   MED_ANGLE   4
+#define   VELOCITY_INTEGRAL_MAX   1500
 
-PID_TYPE_DEF  Balance   = {2, 0, 0.5};  // Kp=2, Ki, Kd
-PID_TYPE_DEF  Velocity  = {1, 0.005, 0};  // Kp, Ki, Kd
-PID_TYPE_DEF  Location  = {1, 0, 0};  // Kp, Ki, Kd
-PID_TYPE_DEF  Angle     = {1, 0, 0};  // Kp, Ki, Kd
-PID_TYPE_DEF  Follow    = {1, 0, 0};  // Kp, Ki, Kd
+PID_TYPE_DEF  Balance ; // 直立环
+PID_TYPE_DEF  Velocity; // 速度环
+PID_TYPE_DEF  Turn    ; // 转向环
+PID_TYPE_DEF  Location; // 位置环
+PID_TYPE_DEF  Dir     ; // 方向环
+PID_TYPE_DEF  Follow  ; // 跟随环
 
+void PID_Init(void)
+{
+  /* 直立环参数 */
+  Balance.Kp = 2.0f;
+  Balance.Ki = 0;
+  Balance.Kd = 0.5f;
+  Balance.I_MAX = 0;
+  Balance.outMAX = 120.0f;
+  Velocity.outMIN = -120.0f;
+  
+  /* 速度环参数 */
+  Velocity.Kp = 1.0f;
+  Velocity.Ki = Velocity.Kp/200.0f;
+  Velocity.Kd = 0;
+  Velocity.I_MAX =  1500.0f;
+  Velocity.outMAX = 90.0f;
+  Velocity.outMIN = -90.0f;
+  
+  /* 方向环参数 */
+  Dir.Kp = 1;
+  Dir.Ki = 0;
+  Dir.Kd = 0;
+  Dir.I_MAX = 0;
+  Dir.outMAX = 40.0f;
+  Dir.outMIN = -40.0f;
+}
 
-float Balance_PID_Update(void)
+void PID_Control_Update(void)
+{ 
+  /* 计算速度环 */
+  Velocity.target = 0;
+  Velocity.out = Velocity_PID_Calcu(Velocity.target, sys.V0+sys.V1);
+  
+  /* 速度环限幅 */
+  Velocity.out = (Velocity.out > Velocity.outMAX) ? (Velocity.outMAX): \
+    ((Velocity.out < Velocity.outMIN) ? (Velocity.outMIN):Velocity.out);
+  
+  /* 计算直立环 */
+  Balance.target = Velocity.out + MED_ANGLE;
+  Balance.out = Balance_PID_Calcu(Balance.target, sys.Pitch, sys.Gy);
+  
+  /* 直立环限幅 */
+  Balance.out = (Balance.out > Balance.outMAX) ? (Balance.outMAX): \
+      ((Balance.out < Balance.outMIN) ? (Balance.outMIN):Balance.out);
+  
+  /* 输出到电机的扭矩 */
+  Set_Motor_Torque(MOTOR0, Balance.out);
+  Set_Motor_Torque(MOTOR1, Balance.out);
+}
+
+float Balance_PID_Calcu(float target_angle, float current_angle, float gyro)
 {
   float PID_out = 0;
   
-  PID_out = Balance.Kp*(MED_ANGLE - sys.Pitch) + Balance.Kd*(sys.Gy - 0);
+  PID_out = Balance.Kp*(target_angle - current_angle) + Balance.Kd*(gyro);
   
   return PID_out;
 }
 
-float Velocity_PID_Update(float target_v)
+float Velocity_PID_Calcu(float target_v, float current_v)
 {
-  static float Shift = 0,Intergral_MAX=1000;
+  static float Err_Integral = 0;
+  static float Err_Lowout_cur, Err_Lowout_pre;  // 低通滤波器当前输出与上轮输出
   float Error;
   float PID_out = 0;
+  float a = 0.70f;
   
-  Error = target_v - (sys.V0+sys.V1)/2.0f;
+  Error = target_v - current_v; // 期望速度 - 当前速度
+  Err_Lowout_cur = (1-a)*Error + a*Err_Lowout_pre; // 低通滤波器，数据更平滑
+  Err_Lowout_pre = Err_Lowout_cur;                 // 记录当前低通滤波的输出作为下一次数据
   
-  Shift += Error;
-  if(Shift > Intergral_MAX) Shift = Intergral_MAX;
-  else if(Shift < -Intergral_MAX) Shift = -Intergral_MAX;
+  Err_Integral += Error;  // 对误差进行积分
   
-  PID_out = Velocity.Kp*Error + Velocity.Ki*Shift;
+  /* 积分限幅 */
+  Err_Integral = (Err_Integral > VELOCITY_INTEGRAL_MAX) ? (VELOCITY_INTEGRAL_MAX):  \
+      ( (Err_Integral < -VELOCITY_INTEGRAL_MAX) ? (-VELOCITY_INTEGRAL_MAX) : (Err_Integral) );
+
+  /* 计算PID输出 */
+  Velocity.Ki = Velocity.Kp/200.0f; // 速度环Kp与Ki成200倍关系
+  PID_out = Velocity.Kp*Err_Lowout_cur + Velocity.Ki*Err_Integral;
   
   return PID_out;
 }
 
+float Dir_PID_Calcu(float target_yaw, float current_yaw)
+{
+  
+  
+}
 
-//// 垂直方向PID控制
-//int Vertical_PID_PD(void) {
-//  float Bias;
-//  int balance;
-//  Bias = mpu.Pitch - Mechanical_balance; // 求出平衡的角度中值 和机械相关
-//  //  printf("Bias : %f, %d\r\n", Bias, 0);
-//  balance = PID_Balance_Kp * Bias + mpu.Gyro_Y * PID_Balance_Kd; // 计算直立PWM
-
-//  return balance; // 返回直立PWm
-//}

@@ -53,6 +53,9 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 
 void System_Init(void);
+void System_Get_Pose(void);
+void System_Get_Yaw(void);
+void System_Get_Battry(void);
 
 /* USER CODE END EFP */
 
