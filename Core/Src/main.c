@@ -143,8 +143,12 @@ int main(void)
   Init_HMC5883L_HAL(&hi2c1);
   MPU6050_Init();
   System_Init();
+  PID_Init();
+  
   Set_Motor_Torque(MOTOR0,0);
 	Set_Motor_Torque(MOTOR1,0);
+  
+
   /* USER CODE END 2 */
 
   /* Init scheduler */

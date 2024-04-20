@@ -10,7 +10,7 @@ void UART2_ESP32_Proc(void);
 
 void Set_Motor_Torque(uint8_t motor, float torque);
 float Velocity_Filter(float* buffer);
-
-
+float LAverage_Filter(float* buffer, uint8_t motor);
+float Median_Filter(float* buffer);
 #endif
 

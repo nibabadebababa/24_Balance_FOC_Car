@@ -92,10 +92,12 @@ typedef struct {
   float   Ax;
   float   Ay;
   float   Az;
-  float   V0;   // 电机0速度
-  float   V1;   // 电机1速度
-  float   bat;  // 电池电压
-  
+  float   V0;     // 电机0真实速度
+  float   V1;     // 电机1真实速度
+  float   bat;    // 电池电压
+  float   Set_V0; // 电机0设定速度
+  float   Set_V1; // 电机1设定速度
+  uint8_t low_bat_warning;
 }SYSTEM_TYPE_DEF;
 
 extern SYSTEM_TYPE_DEF sys;

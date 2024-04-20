@@ -15,11 +15,23 @@ typedef struct{
   float I_MAX;
   float outMAX;
   float outMIN;
+  float I;
 }PID_TYPE_DEF;
 
+extern PID_TYPE_DEF  Balance ; // 直立环
+extern PID_TYPE_DEF  Velocity; // 速度环
+extern PID_TYPE_DEF  Turn    ; // 转向环
+extern PID_TYPE_DEF  Location; // 位置环
+extern PID_TYPE_DEF  Dir     ; // 方向环
+extern PID_TYPE_DEF  Follow  ; // 跟随环
 
+void PID_Init(void);
+void PID_Control_Update(void);
 float Balance_PID_Calcu(float target_angle, float current_angle, float gyro);
 float Velocity_PID_Calcu(float target_v, float current_v);
-
+float Dir_PID_Calcu(float target_yaw, float current_yaw);
 
 #endif
+
+
+

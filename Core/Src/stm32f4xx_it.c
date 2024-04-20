@@ -94,6 +94,8 @@ void HardFault_Handler(void)
   while (1)
   {
     /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+    HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
+    HAL_Delay(1000);
     /* USER CODE END W1_HardFault_IRQn 0 */
   }
 }
@@ -204,9 +206,46 @@ void USART2_IRQHandler(void)
   /* USER CODE END USART2_IRQn 0 */
   HAL_UART_IRQHandler(&huart2);
   /* USER CODE BEGIN USART2_IRQn 1 */
-  uart2_rxdata[uart2_rxpointer++] = uart2_rxdat;
-	uart2_rxpointer %= UART_BUF_MAX;
-  HAL_UART_Receive_IT(&huart2, &uart2_rxdat, 1);
+  static uint8_t rx_sta=0;
+  switch(rx_sta){
+    case 0:
+      if(uart2_rxdat == 0xFF)
+        rx_sta = 1;
+      else if(uart2_rxdat == 0xAA)
+          rx_sta = 3;
+      break;
+    case 1:
+      if(uart2_rxdat == 0xFE)
+        rx_sta = 2;
+      else
+        rx_sta = 0;
+      break;
+      
+    case 2:
+      if(uart2_rxdat != 0xEF){
+        uart2_rxdata[uart2_rxpointer++] = uart2_rxdat;
+        uart2_rxpointer %= UART_BUF_MAX;
+      }
+      else{
+        uart2_rxdata[uart2_rxpointer++] = uart2_rxdat;
+        uart2_rxpointer %= UART_BUF_MAX;        
+        rx_sta = 0;
+      }
+      break;
+    
+    case 3:
+        if(uart2_rxdat == 0xBB){
+            sys.Motor_Ready = 1;
+            uint8_t rply = 0xAA;
+            HAL_UART_Transmit(&huart2, &rply, 1, 2);
+            rx_sta = 0;
+        }
+        else
+            rx_sta = 0;
+    default:
+        rx_sta = 0;
+  }
+    HAL_UART_Receive_IT(&huart2, &uart2_rxdat, 1);
   /* USER CODE END USART2_IRQn 1 */
 }
 

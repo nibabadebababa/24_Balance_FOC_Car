@@ -45,7 +45,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define VELOCITY_DEBUG    // 不等待电机自检完成，直接接收速度
+#define VELOCITY_DEBUG    // 不等待电机自检完成
 
 /* USER CODE END PD */
 
@@ -148,24 +148,19 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   BaseType_t preTick = xTaskGetTickCount();
   
-//  while(sys.Motor_Ready==0){
-//    
-//  }
+  while(sys.Motor_Ready==0){
+      printf("Waiting for Motor Self-Detect...\n");
+    vTaskDelay(100);
+  }
   
   for (;;) {
-    MPU6050_Get_Pose();
-    HMC5883_Get_Yaw(&hi2c1, &mag);
-    MPU6050_Read_Gyro();
-
-//    printf("%.1f,%.1f,%.1f\n",mpu.Pitch, mpu.Roll, mpu.Yaw);
-
-//    PID_B_out = Balance_PID_Update();
-//    PID_V_out = Velocity_PID_Update(0);
-//    out = PID_B_out + PID_V_out;
-//    Set_Motor_Torque(MOTOR0, out);
-//    Set_Motor_Torque(MOTOR1, out);
+    System_Get_Pose();
+    //System_Get_Yaw();
+    UART2_ESP32_Rx_Update();
+    PID_Control_Update();
+    
     vTaskDelay(1);
-
+    //System_Get_Battry();
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -183,12 +178,10 @@ void StartTask02(void *argument)
   
   /* Infinite loop */
   for (;;) {
-//	  PID_out = Balance_PID_Update();
-//    Set_Motor_Torque(MOTOR0, PID_out);
-//    Set_Motor_Torque(MOTOR1, PID_out);
-//    vTaskDelay(1);
-    HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
-    vTaskDelay(100);
+      if(sys.Motor_Ready){
+        HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
+        vTaskDelay(100);         
+      }
   }
   /* USER CODE END StartTask02 */
 }
@@ -219,27 +212,35 @@ void StartTask03(void *argument)
 
 void System_Init(void)
 {
-  sys.bat = 0;
-  sys.print_dev = DAPLINK;
-  sys.V0 = 0;
-  sys.V1 = 0;
-  sys.Motor_Ready = 0;
-  sys.X3_Ready = 0;
+    sys.bat = 0;
+    sys.print_dev = DAPLINK;
+    sys.V0 = 0;
+    sys.V1 = 0;
+    sys.low_bat_warning = 0;  // 低压警告
+    sys.Set_V0 = 0;
+    sys.Set_V1 = 0;
+    sys.X3_Ready = 0;
+    #ifdef VELOCITY_DEBUG
+    sys.Motor_Ready = 1;
+    #else
+    sys.Motor_Ready = 0;
+    #endif
 }
 
 void System_Get_Pose(void)
 {
   MPU6050_Get_Pose();
   MPU6050_Read_Gyro();
-  MPU6050_Read_Accel();
-  sys.Ax = mpu.Accel_X;
-  sys.Ay = mpu.Accel_Y;
-  sys.Az = mpu.Accel_Z;
+//  MPU6050_Read_Accel();
+//  sys.Ax = mpu.Accel_X;
+//  sys.Ay = mpu.Accel_Y;
+//  sys.Az = mpu.Accel_Z;
   sys.Gx = mpu.Gyro_X;
   sys.Gy = mpu.Gyro_Y;
   sys.Gz = mpu.Gyro_Z;
   sys.Pitch = mpu.Pitch;
   sys.Roll = mpu.Roll;
+
 }
 
 void System_Get_Yaw(void)

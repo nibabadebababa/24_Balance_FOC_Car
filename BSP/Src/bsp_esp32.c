@@ -2,8 +2,9 @@
 #include "stdio.h"
 #include "string.h"
 #include "cmsis_os.h"
+#include "stdlib.h"
 
-#define 	TORQUE_MAX		120
+#define 	TORQUE_MAX		140
 #define 	V_BUF_LEN		5
 
 float Velocity_Buf0[V_BUF_LEN];
@@ -38,30 +39,19 @@ void UART6_DAPLink_Proc(void)
 
 void UART2_ESP32_Proc(void)
 {
-  #ifdef VELOCITY_DEBUG
-    sscanf((char*)uart2_rxdata, "%f,%f\n",&Velocity_Buf0[buf_pointer],&Velocity_Buf1[buf_pointer]);
+    Velocity_Buf0[buf_pointer] = (float)((short)(( ((short)uart2_rxdata[0]) <<8) | uart2_rxdata[1]))/10.0f;
+    Velocity_Buf1[buf_pointer] = (float)((short)(( ((short)uart2_rxdata[2]) <<8) | uart2_rxdata[3]))/10.0f;
+
     buf_pointer++;
-    buf_pointer%=V_BUF_LEN;
-    sys.V0 = Velocity_Filter(Velocity_Buf0);
-    sys.V1 = Velocity_Filter(Velocity_Buf1);
-  #else
-   if(sys.Motor_Ready == 0){
-    if( strcmp((char*)uart2_rxdata, "OK") == 0 ){
-        HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_RESET);
-        sys.Motor_Ready = 1;
+    if(buf_pointer>=V_BUF_LEN){
+        sys.V0 = Median_Filter(Velocity_Buf0);
+        sys.V1 = Median_Filter(Velocity_Buf1);
+        buf_pointer = 0;
+        //printf("%.1f,%.1f\n",sys.V0, sys.V1);
     }
-  } 
-  else{
-    sscanf((char*)uart2_rxdata, "%f,%f\n",&Velocity_Buf0[buf_pointer],&Velocity_Buf1[buf_pointer]);
-    buf_pointer++;
-    buf_pointer%=V_BUF_LEN;
-    sys.V0 = Velocity_Filter(Velocity_Buf0);
-    sys.V1 = Velocity_Filter(Velocity_Buf1);
-  } 
-  #endif
-  
-	uart2_rxpointer = 0;
-	memset(uart2_rxdata, 0, UART_BUF_MAX);	
+
+    uart2_rxpointer = 0;
+    memset(uart2_rxdata, 0, UART_BUF_MAX);	
 }
 
 
@@ -88,7 +78,62 @@ float Velocity_Filter(float* buffer)
 	uint8_t i;
 	for(i=0;i<V_BUF_LEN;i++)
 		sum += buffer[i];
-	
-	return (sum/V_BUF_LEN);
+
+  return (sum/V_BUF_LEN);
 }
 
+#define   A   30
+
+
+float LAverage_Filter(float* buffer, uint8_t motor)
+{
+  uint8_t i;
+  uint8_t cnt = 0;
+  uint8_t flag = 0;
+  float sum=0;
+  
+  if(motor == MOTOR0){
+    for(i=0;i<V_BUF_LEN;i++){
+      if( (buffer[i] - sys.Set_V0) > A || (sys.Set_V0-buffer[i]) > A || buffer[i]>100.0f)
+      {
+          flag++;
+      }
+      else{
+          sum += buffer[i];
+          cnt++;
+      }
+    }
+  }
+  else{
+    for(i=0;i<V_BUF_LEN;i++){
+        if((buffer[i] - sys.Set_V1) > A || (sys.Set_V1-buffer[i]) > A || buffer[i]>100.0f)
+        {
+          flag++;
+        }
+        else{
+            sum += buffer[i];
+            cnt++;
+        }
+    }
+  }    
+  
+  return sum/cnt;
+}
+
+float Median_Filter(float* buffer)
+{
+    uint8_t i,j;
+    float temp;
+    for(j = 0; j< V_BUF_LEN - 1;j++){
+        for(i=0;i<V_BUF_LEN - j - 1;i++){
+            if(buffer[i] > buffer[i+1]){
+                temp = buffer[i];
+                buffer[i] = buffer[i+1];
+                buffer[i+1] = temp;
+            }
+            
+        }   
+    }
+    temp = buffer[(V_BUF_LEN-1)/2];
+    return temp;
+}
