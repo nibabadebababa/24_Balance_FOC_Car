@@ -148,6 +148,7 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   BaseType_t preTick = xTaskGetTickCount();
   
+    uint8_t cnt = 0;
   while(sys.Motor_Ready==0){
       printf("Waiting for Motor Self-Detect...\n");
     vTaskDelay(100);
@@ -155,10 +156,24 @@ void StartDefaultTask(void *argument)
   
   for (;;) {
     System_Get_Pose();
-    //System_Get_Yaw();
+      if(cnt){
+          System_Get_Yaw();
+          cnt=0;
+      }
+    Falling_Detect(sys.Pitch);
+    Pick_Up_Detect(sys.V0-sys.V1,sys.Pitch);
+    //printf("%.1f,%.1f,%.1f,%d\n",sys.Yaw, mag.angle, mpu.Yaw, tim2_100ms_cnt);
+      printf("%.1f,%.1f\n",sys.V0-sys.V1, sys.Pitch);
     UART2_ESP32_Rx_Update();
-    PID_Control_Update();
+      if(sys.falling_flag || sys.pick_up_flag){
+          Set_Motor_Torque(MOTOR0, 0);
+          Set_Motor_Torque(MOTOR1, 0);
+      }
+      else{
+          PID_Control_Update();
+      }
     
+    cnt++;
     vTaskDelay(1);
     //System_Get_Battry();
   }
@@ -225,6 +240,9 @@ void System_Init(void)
     #else
     sys.Motor_Ready = 0;
     #endif
+    
+    sys.pick_up_flag = 0;       // 拿起检测标志位
+    sys.falling_flag = 0;       // 倒地检测标志位
 }
 
 void System_Get_Pose(void)
@@ -240,14 +258,25 @@ void System_Get_Pose(void)
   sys.Gz = mpu.Gyro_Z;
   sys.Pitch = mpu.Pitch;
   sys.Roll = mpu.Roll;
-
 }
 
 void System_Get_Yaw(void)
 {
-  float a = 0.9;
-  HMC5883_Get_Yaw(&hi2c1, &mag);
-  sys.Yaw = a*(mpu.Yaw+243) + (1-a)*mag.angle;
+    static float mag_buffer[MAG_BUF_LEN] = {0};
+    static float mpu_buffer[MAG_BUF_LEN] = {0};
+    static uint8_t buf_pointer = 0;
+    float a = 0.9f;
+    
+    HMC5883_Get_Yaw(&hi2c1, &mag);
+    mag_buffer[buf_pointer] = mag.angle;
+    mpu_buffer[buf_pointer] = mpu.Yaw;
+    buf_pointer++;
+    if(buf_pointer>= MAG_BUF_LEN){
+        float mag_yaw = Median_Filter(mag_buffer, MAG_BUF_LEN);
+        float mpu_yaw = Average_Filter(mpu_buffer, MAG_BUF_LEN);
+        sys.Yaw = a*(mpu_yaw+243) + (1-a)*mag_yaw;
+        buf_pointer = 0;
+    }
 }
 
 void System_Get_Battry(void)

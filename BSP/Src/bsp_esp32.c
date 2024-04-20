@@ -44,8 +44,8 @@ void UART2_ESP32_Proc(void)
 
     buf_pointer++;
     if(buf_pointer>=V_BUF_LEN){
-        sys.V0 = Median_Filter(Velocity_Buf0);
-        sys.V1 = Median_Filter(Velocity_Buf1);
+        sys.V0 = Median_Filter(Velocity_Buf0, V_BUF_LEN);
+        sys.V1 = Median_Filter(Velocity_Buf1, V_BUF_LEN);
         buf_pointer = 0;
         //printf("%.1f,%.1f\n",sys.V0, sys.V1);
     }
@@ -82,50 +82,23 @@ float Velocity_Filter(float* buffer)
   return (sum/V_BUF_LEN);
 }
 
-#define   A   30
-
-
-float LAverage_Filter(float* buffer, uint8_t motor)
+float Average_Filter(float* buffer, uint8_t len)
 {
-  uint8_t i;
-  uint8_t cnt = 0;
-  uint8_t flag = 0;
-  float sum=0;
-  
-  if(motor == MOTOR0){
-    for(i=0;i<V_BUF_LEN;i++){
-      if( (buffer[i] - sys.Set_V0) > A || (sys.Set_V0-buffer[i]) > A || buffer[i]>100.0f)
-      {
-          flag++;
-      }
-      else{
-          sum += buffer[i];
-          cnt++;
-      }
-    }
-  }
-  else{
-    for(i=0;i<V_BUF_LEN;i++){
-        if((buffer[i] - sys.Set_V1) > A || (sys.Set_V1-buffer[i]) > A || buffer[i]>100.0f)
-        {
-          flag++;
-        }
-        else{
-            sum += buffer[i];
-            cnt++;
-        }
-    }
-  }    
-  
-  return sum/cnt;
+    uint8_t i;
+    float sum = 0;
+    for(i=0;i<len;i++)
+        sum += buffer[i];
+    
+    return (sum/len);
 }
 
-float Median_Filter(float* buffer)
+
+float Median_Filter(float* buffer, uint8_t len)
 {
     uint8_t i,j;
     float temp;
-    for(j = 0; j< V_BUF_LEN - 1;j++){
-        for(i=0;i<V_BUF_LEN - j - 1;i++){
+    for(j = 0; j< len - 1;j++){
+        for(i=0;i<len - j - 1;i++){
             if(buffer[i] > buffer[i+1]){
                 temp = buffer[i];
                 buffer[i] = buffer[i+1];
@@ -134,6 +107,11 @@ float Median_Filter(float* buffer)
             
         }   
     }
-    temp = buffer[(V_BUF_LEN-1)/2];
+    if(len%2==0){
+        temp = (buffer[len/2]+buffer[len/2-1])/2.0f;
+    } else{
+        temp = buffer[(len-1)/2];
+    }
+    
     return temp;
 }

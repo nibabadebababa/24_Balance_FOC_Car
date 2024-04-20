@@ -1,4 +1,6 @@
 #include "bsp_hmc5883.h"
+#include "bsp_esp32.h"
+
 #include <math.h>
 
 struct HMC5883L_Data mag;
@@ -14,10 +16,13 @@ void Init_HMC5883L_HAL(I2C_HandleTypeDef *hi2c1) {
   unsigned char cdata[3] = {0x78, 0x38, 0X00};
   HAL_I2C_Mem_Write(hi2c1, HMC5883L_Addr, HMC5883l_CONFIG_A,
                     I2C_MEMADD_SIZE_8BIT, cdata, 1, 1000);     // 75Hz
+  HAL_Delay(1);
   HAL_I2C_Mem_Write(hi2c1, HMC5883L_Addr, HMC5883l_CONFIG_B,
                     I2C_MEMADD_SIZE_8BIT, cdata + 1, 1, 1000); // 设置增益，
+  HAL_Delay(1);
   HAL_I2C_Mem_Write(hi2c1, HMC5883L_Addr, HMC5883l_MODECONFIG,
                     I2C_MEMADD_SIZE_8BIT, cdata + 2, 1,1000);  // 设置测量模式，连续测量模式
+  HAL_Delay(1);
 }
 
 /**** 读取HMC5883L的磁场角度  */
@@ -51,8 +56,9 @@ float HMC5883_Get_Yaw(I2C_HandleTypeDef *hi2c1,
                       57.3; // 加0.001是为了强制进行浮点数运算，且对精度影响很小
   if (x > 0)
     fangle = 270 + atan((y + 0.001) / x) * 57.3;
+  
   VL_temp->angle = fangle;
-
+  
   return fangle;
 }
 

@@ -21,6 +21,7 @@
 #include "cmsis_os.h"
 #include "adc.h"
 #include "i2c.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -129,12 +130,13 @@ int main(void)
   MX_ADC1_Init();
   MX_USART3_UART_Init();
   MX_USART6_UART_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
 #ifdef CLION_COMPILER_FLAG
 //  RetargetInit(&huart6); // 重定向容易导致死机
 #endif
-  
+  HAL_TIM_Base_Start_IT(&htim2);
   HAL_UART_Receive_IT(&huart1, &uart1_rxdat, 1);
   HAL_UART_Receive_IT(&huart2, &uart2_rxdat, 1);
   HAL_UART_Receive_IT(&huart3, &uart3_rxdat, 1);
@@ -156,7 +158,7 @@ int main(void)
 
   /* Call init function for freertos objects (in cmsis_os2.c) */
   MX_FREERTOS_Init();
-	
+
   /* Start scheduler */
   osKernelStart();
 

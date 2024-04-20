@@ -29,7 +29,10 @@ void PID_Init(void);
 void PID_Control_Update(void);
 float Balance_PID_Calcu(float target_angle, float current_angle, float gyro);
 float Velocity_PID_Calcu(float target_v, float current_v);
-float Dir_PID_Calcu(float target_yaw, float current_yaw);
+float Dir_PID_Calcu(float target_yaw, float current_yaw, float gyro_z);
+void Pick_Up_Detect(float velocity, float pitch);
+void Falling_Detect(float pitch);
+
 
 #endif
 

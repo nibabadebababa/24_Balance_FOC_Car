@@ -64,10 +64,12 @@ void System_Get_Battry(void);
 #define LED_ACTION_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-#define PrintChar printf
-#define UART_BUF_MAX 20
-#define MOTOR0 0
-#define MOTOR1 1
+#define     PrintChar       printf
+#define     UART_BUF_MAX    20
+#define     MAG_BUF_LEN     3
+
+#define     MOTOR0          0
+#define     MOTOR1          1
 
 typedef enum {
   ESP32 = 0,
@@ -97,7 +99,11 @@ typedef struct {
   float   bat;    // 电池电压
   float   Set_V0; // 电机0设定速度
   float   Set_V1; // 电机1设定速度
+    
   uint8_t low_bat_warning;
+  uint8_t pick_up_flag;
+  uint8_t falling_flag;
+  
 }SYSTEM_TYPE_DEF;
 
 extern SYSTEM_TYPE_DEF sys;
@@ -122,6 +128,8 @@ extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
 extern UART_HandleTypeDef huart6;
+
+extern uint16_t tim2_100ms_cnt;
 
 /* USER CODE END Private defines */
 
