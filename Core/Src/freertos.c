@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app_control.h"
+#include "app_bluetooth.h"
 #include "bsp_battry.h"
 #include "bsp_dmp.h"
 #include "bsp_esp32.h"
@@ -46,7 +47,7 @@
 /* USER CODE BEGIN PD */
 
 #define VELOCITY_DEBUG    // 不等待电机自检完成
-
+#define YAW_ONLY_USE_MPU    // 只使用MPU6050获取Yaw角
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -153,6 +154,7 @@ void StartDefaultTask(void *argument)
       printf("Waiting for Motor Self-Detect...\n");
     vTaskDelay(100);
   }
+  System_Calibration_Yaw();
   
   for (;;) {
     System_Get_Pose();
@@ -160,11 +162,13 @@ void StartDefaultTask(void *argument)
           System_Get_Yaw();
           cnt=0;
       }
-    Falling_Detect(sys.Pitch);
+      printf("%.1f\n",sys.Pitch);
+    //Falling_Detect(sys.Pitch);
     Pick_Up_Detect(sys.V0-sys.V1,sys.Pitch);
     //printf("%.1f,%.1f,%.1f,%d\n",sys.Yaw, mag.angle, mpu.Yaw, tim2_100ms_cnt);
-      printf("%.1f,%.1f\n",sys.V0-sys.V1, sys.Pitch);
+    //printf("%.1f,%.1f,%.1f\n",sys.V0-sys.V1, sys.Pitch, sys.Yaw);
     UART2_ESP32_Rx_Update();
+      
       if(sys.falling_flag || sys.pick_up_flag){
           Set_Motor_Torque(MOTOR0, 0);
           Set_Motor_Torque(MOTOR1, 0);
@@ -175,7 +179,6 @@ void StartDefaultTask(void *argument)
     
     cnt++;
     vTaskDelay(1);
-    //System_Get_Battry();
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -190,12 +193,34 @@ void StartDefaultTask(void *argument)
 void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
-  
+  uint8_t i;
   /* Infinite loop */
   for (;;) {
-      if(sys.Motor_Ready){
-        HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
-        vTaskDelay(100);         
+    if(sys.falling_flag){
+          /* 闪烁一次：检测到倒地 */
+          HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_RESET);
+          vTaskDelay(200);  
+          HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_SET); 
+          vTaskDelay(1000);           
+      }
+      else if(sys.pick_up_flag){
+          /* 闪烁三次：检测到拿起 */
+          for(i=0;i<3;i++){
+              HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_RESET);
+              vTaskDelay(200);  
+              HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_SET);
+              vTaskDelay(200);  
+          }
+          vTaskDelay(1000);           
+      }
+      else if(sys.bat<11.5){
+          /* 熄灭：检测到电池电压过低 */
+          HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_SET);
+      }
+      else{
+          /* 一直闪烁：正常*/
+          HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
+          vTaskDelay(100);
       }
   }
   /* USER CODE END StartTask02 */
@@ -218,6 +243,8 @@ void StartTask03(void *argument)
     UART2_ESP32_Rx_Update();
     UART3_X3_Rx_Update();
     UART6_DAPLink_Rx_Update();
+    Bluetooth_Cmd_Pro();
+      System_Get_Battry();
   }
   /* USER CODE END StartTask03 */
 }
@@ -241,8 +268,15 @@ void System_Init(void)
     sys.Motor_Ready = 0;
     #endif
     
+    sys.MPU_Ready = 0;
+    sys.HMC_Ready = 0;
     sys.pick_up_flag = 0;       // 拿起检测标志位
     sys.falling_flag = 0;       // 倒地检测标志位
+    sys.turn_sta = ANGLE;
+    
+    /* 蓝牙初始状态 */
+    bt.cmd = Self_Ctrl;
+    bt.rx_flag = 0;
 }
 
 void System_Get_Pose(void)
@@ -262,6 +296,7 @@ void System_Get_Pose(void)
 
 void System_Get_Yaw(void)
 {
+#ifndef YAW_ONLY_USE_MPU
     static float mag_buffer[MAG_BUF_LEN] = {0};
     static float mpu_buffer[MAG_BUF_LEN] = {0};
     static uint8_t buf_pointer = 0;
@@ -274,14 +309,49 @@ void System_Get_Yaw(void)
     if(buf_pointer>= MAG_BUF_LEN){
         float mag_yaw = Median_Filter(mag_buffer, MAG_BUF_LEN);
         float mpu_yaw = Average_Filter(mpu_buffer, MAG_BUF_LEN);
-        sys.Yaw = a*(mpu_yaw+243) + (1-a)*mag_yaw;
+        sys.Yaw = a*(mpu_yaw) + (1-a)*(mag_yaw + sys.Yaw_offset);
+        printf("%.1f,%.1f,%.1f,%.1f\n",sys.Yaw, mpu_yaw, mag.angle-180, mag_yaw+sys.Yaw_offset);
         buf_pointer = 0;
     }
+#else
+    static float mpu_buffer[MAG_BUF_LEN] = {0};
+    static uint8_t buf_pointer = 0;
+    mpu_buffer[buf_pointer++] = mpu.Yaw;
+    if(buf_pointer>= MAG_BUF_LEN){
+        sys.Yaw = Average_Filter(mpu_buffer, MAG_BUF_LEN);
+        buf_pointer = 0;
+    }
+    
+#endif
 }
 
 void System_Get_Battry(void)
 {
   Battry_GetVoltage();
+}
+
+/* 初始校准Yaw角 */
+void System_Calibration_Yaw(void)
+{
+    float mag_buffer[10] = {0};
+    uint8_t cnt = 0;
+    if(sys.MPU_Ready==1 && sys.HMC_Ready==1){
+        do{
+            HMC5883_Get_Yaw(&hi2c1, &mag);
+            mag_buffer[cnt++] = mag.angle;
+            if(cnt>=10){
+                MPU6050_Get_Pose();
+                HAL_Delay(1);
+                float mag_yaw = Median_Filter(mag_buffer, 10);
+                sys.Yaw_offset = mpu.Yaw - mag_yaw - 180.0f;
+                printf("%.1f,%.1f,%.1f\n",mpu.Yaw, mag_yaw,sys.Yaw_offset);
+                break;
+            } else
+                HAL_Delay(2);
+        }while(cnt<10);
+    } 
+    else 
+        printf("Error\n");
 }
 
 /* USER CODE END Application */

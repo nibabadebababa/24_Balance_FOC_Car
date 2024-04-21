@@ -32,6 +32,8 @@ float Velocity_PID_Calcu(float target_v, float current_v);
 float Dir_PID_Calcu(float target_yaw, float current_yaw, float gyro_z);
 void Pick_Up_Detect(float velocity, float pitch);
 void Falling_Detect(float pitch);
+float Turn_PID_Calcu(float RC, float gyro_Z);
+void Landing_Detect(void);
 
 
 #endif

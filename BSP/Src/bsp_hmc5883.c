@@ -23,6 +23,7 @@ void Init_HMC5883L_HAL(I2C_HandleTypeDef *hi2c1) {
   HAL_I2C_Mem_Write(hi2c1, HMC5883L_Addr, HMC5883l_MODECONFIG,
                     I2C_MEMADD_SIZE_8BIT, cdata + 2, 1,1000);  // 设置测量模式，连续测量模式
   HAL_Delay(1);
+  sys.HMC_Ready = 1;
 }
 
 /**** 读取HMC5883L的磁场角度  */

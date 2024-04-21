@@ -15,6 +15,7 @@ void UART3_X3_Rx_Update(void)
 			UART3_X3_Proc();
 	}
 }
+
 // 0x00,\n
 // 0xFF,id,x,y,h,w
 void UART3_X3_Proc(void)
@@ -25,8 +26,6 @@ void UART3_X3_Proc(void)
 								&target_buf[pointer].x_offset, &target_buf[pointer].y_offset ,\
 								&target_buf[pointer].height, &target_buf[pointer].width);
 	}
-	
-
 	memset(uart3_rxdata, 0, UART_BUF_MAX);
 	uart3_rxpointer = 0;
 }

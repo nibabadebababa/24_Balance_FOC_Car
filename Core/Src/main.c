@@ -32,7 +32,7 @@
 #endif
 
 #include "app_control.h"
-#include "app_foc.h"
+#include "app_bluetooth.h"
 #include "app_x3.h"
 #include "bsp_battry.h"
 #include "bsp_bluetooth.h"
@@ -132,23 +132,25 @@ int main(void)
   MX_USART6_UART_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+    
+    System_Init();
 
 #ifdef CLION_COMPILER_FLAG
 //  RetargetInit(&huart6); // 重定向容易导致死机
 #endif
-  HAL_TIM_Base_Start_IT(&htim2);
-  HAL_UART_Receive_IT(&huart1, &uart1_rxdat, 1);
-  HAL_UART_Receive_IT(&huart2, &uart2_rxdat, 1);
-  HAL_UART_Receive_IT(&huart3, &uart3_rxdat, 1);
-  HAL_UART_Receive_IT(&huart6, &uart6_rxdat, 1);
 
-  Init_HMC5883L_HAL(&hi2c1);
-  MPU6050_Init();
-  System_Init();
-  PID_Init();
-  
-  Set_Motor_Torque(MOTOR0,0);
-	Set_Motor_Torque(MOTOR1,0);
+    HAL_TIM_Base_Start_IT(&htim2);
+    HAL_UART_Receive_IT(&huart1, &uart1_rxdat, 1);
+    HAL_UART_Receive_IT(&huart2, &uart2_rxdat, 1);
+    HAL_UART_Receive_IT(&huart3, &uart3_rxdat, 1);
+    HAL_UART_Receive_IT(&huart6, &uart6_rxdat, 1);
+
+    Init_HMC5883L_HAL(&hi2c1);
+    MPU6050_Init();
+    PID_Init();
+
+    Set_Motor_Torque(MOTOR0,0);
+    Set_Motor_Torque(MOTOR1,0);
   
 
   /* USER CODE END 2 */

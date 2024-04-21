@@ -23,6 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "bsp_bluetooth.h"
+#include "app_control.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,7 +44,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+uint16_t tim2_100ms_cnt2 = 0;
 uint16_t tim2_100ms_cnt = 0;
 /* USER CODE END PV */
 
@@ -178,7 +180,8 @@ void TIM2_IRQHandler(void)
   HAL_TIM_IRQHandler(&htim2);
   /* USER CODE BEGIN TIM2_IRQn 1 */
     tim2_100ms_cnt++;
-    tim2_100ms_cnt%=10000;
+    tim2_100ms_cnt%=TIM2_CNT_MAX;
+    Landing_Detect();
   /* USER CODE END TIM2_IRQn 1 */
 }
 
