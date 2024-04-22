@@ -133,7 +133,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
     
-    System_Init();
+    
 
 #ifdef CLION_COMPILER_FLAG
 //  RetargetInit(&huart6); // 重定向容易导致死机
@@ -144,7 +144,8 @@ int main(void)
     HAL_UART_Receive_IT(&huart2, &uart2_rxdat, 1);
     HAL_UART_Receive_IT(&huart3, &uart3_rxdat, 1);
     HAL_UART_Receive_IT(&huart6, &uart6_rxdat, 1);
-
+    System_Init();
+    
     Init_HMC5883L_HAL(&hi2c1);
     MPU6050_Init();
     PID_Init();

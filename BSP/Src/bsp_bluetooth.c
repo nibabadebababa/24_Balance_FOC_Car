@@ -59,8 +59,6 @@ void UART1_BLE_Proc(void)
 	/*清零接收缓冲区与指针*/
 	uart1_rxpointer = 0;
 	memset(uart1_rxdata, 0, UART_BUF_MAX);
-    
-    
 }
 
 void UART1_BLE_Print(const char* message)

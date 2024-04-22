@@ -162,12 +162,13 @@ void StartDefaultTask(void *argument)
           System_Get_Yaw();
           cnt=0;
       }
-      printf("%.1f\n",sys.Pitch);
+      //printf("%.1f\n",sys.Pitch);
     //Falling_Detect(sys.Pitch);
     Pick_Up_Detect(sys.V0-sys.V1,sys.Pitch);
-    //printf("%.1f,%.1f,%.1f,%d\n",sys.Yaw, mag.angle, mpu.Yaw, tim2_100ms_cnt);
-    //printf("%.1f,%.1f,%.1f\n",sys.V0-sys.V1, sys.Pitch, sys.Yaw);
+    //printf("%.1f,%.1f,%.1f,%.1f\n",sys.Roll, sys.Pitch, sys.Ax, sys.Ay);
     UART2_ESP32_Rx_Update();
+      //Set_Motor_Torque(MOTOR0, 10);
+      //Set_Motor_Torque(MOTOR1, 10);
       
       if(sys.falling_flag || sys.pick_up_flag){
           Set_Motor_Torque(MOTOR0, 0);
@@ -213,7 +214,7 @@ void StartTask02(void *argument)
           }
           vTaskDelay(1000);           
       }
-      else if(sys.bat<11.5){
+      else if(sys.bat<11.5f){
           /* 熄灭：检测到电池电压过低 */
           HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_SET);
       }
@@ -222,6 +223,7 @@ void StartTask02(void *argument)
           HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
           vTaskDelay(100);
       }
+
   }
   /* USER CODE END StartTask02 */
 }
@@ -255,7 +257,6 @@ void StartTask03(void *argument)
 void System_Init(void)
 {
     sys.bat = 0;
-    sys.print_dev = DAPLINK;
     sys.V0 = 0;
     sys.V1 = 0;
     sys.low_bat_warning = 0;  // 低压警告
@@ -270,9 +271,11 @@ void System_Init(void)
     
     sys.MPU_Ready = 0;
     sys.HMC_Ready = 0;
-    sys.pick_up_flag = 0;       // 拿起检测标志位
-    sys.falling_flag = 0;       // 倒地检测标志位
+    sys.pick_up_flag = 0;           // 拿起检测标志位
+    sys.falling_flag = 0;           // 倒地检测标志位
     sys.turn_sta = ANGLE;
+    sys.veloc_sta = LOCATION_CTRL;  // 位置闭环模式
+    sys.S_cur = (sys.S0 - sys.S1)/2;  // 记录当前小车的位置
     
     /* 蓝牙初始状态 */
     bt.cmd = Self_Ctrl;
@@ -283,10 +286,10 @@ void System_Get_Pose(void)
 {
   MPU6050_Get_Pose();
   MPU6050_Read_Gyro();
-//  MPU6050_Read_Accel();
-//  sys.Ax = mpu.Accel_X;
-//  sys.Ay = mpu.Accel_Y;
-//  sys.Az = mpu.Accel_Z;
+  MPU6050_Read_Accel();
+  sys.Ax = mpu.Accel_X;
+  sys.Ay = mpu.Accel_Y;
+  sys.Az = mpu.Accel_Z;
   sys.Gx = mpu.Gyro_X;
   sys.Gy = mpu.Gyro_Y;
   sys.Gz = mpu.Gyro_Z;
@@ -310,7 +313,7 @@ void System_Get_Yaw(void)
         float mag_yaw = Median_Filter(mag_buffer, MAG_BUF_LEN);
         float mpu_yaw = Average_Filter(mpu_buffer, MAG_BUF_LEN);
         sys.Yaw = a*(mpu_yaw) + (1-a)*(mag_yaw + sys.Yaw_offset);
-        printf("%.1f,%.1f,%.1f,%.1f\n",sys.Yaw, mpu_yaw, mag.angle-180, mag_yaw+sys.Yaw_offset);
+        //printf("%.1f,%.1f,%.1f,%.1f\n",sys.Yaw, mpu_yaw, mag.angle-180, mag_yaw+sys.Yaw_offset);
         buf_pointer = 0;
     }
 #else
@@ -344,7 +347,7 @@ void System_Calibration_Yaw(void)
                 HAL_Delay(1);
                 float mag_yaw = Median_Filter(mag_buffer, 10);
                 sys.Yaw_offset = mpu.Yaw - mag_yaw - 180.0f;
-                printf("%.1f,%.1f,%.1f\n",mpu.Yaw, mag_yaw,sys.Yaw_offset);
+                //printf("%.1f,%.1f,%.1f\n",mpu.Yaw, mag_yaw,sys.Yaw_offset);
                 break;
             } else
                 HAL_Delay(2);

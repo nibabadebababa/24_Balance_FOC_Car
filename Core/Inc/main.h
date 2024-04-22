@@ -74,48 +74,57 @@ void System_Calibration_Yaw(void);
 #define     MOTOR0          0
 #define     MOTOR1          1
 
-typedef enum {
-  ESP32 = 0,
-  BLE = 1,
-  X3 = 2,
-  DAPLINK = 3,
-} PRINTF_ENUM_TYPE;
-
 typedef enum{
     ANGLE = 0,      // 角度闭环控制
     FREEDOM = 1,    // 自由转向控制
 }TURN_CONTROL_TYPE; // 转弯类型
 
+typedef enum{
+    LOCATION_CTRL=0,     // 位置闭环控制
+    BT_CTRL=1,    // 蓝牙自由控制
+}VELOCITY_CONTROL_TYPE;
+
+typedef struct{
+	uint16_t id;
+	uint16_t x_offset;
+	uint16_t y_offset;
+	uint16_t height;
+	uint16_t width;
+}DETECT_TARGET_TYPE;
+
 typedef struct {
-  
-    PRINTF_ENUM_TYPE print_dev;
     uint8_t Motor_Ready;  // 电机FOC算法磁编码器自检
     uint8_t X3_Ready;     // X3启动launch文件与串口节点
     uint8_t MPU_Ready;    // MPU6050初始化完成
     uint8_t HMC_Ready;    // HMC5883磁力计初始化完成
     
     /* 系统状态 */
-    float   Yaw;
-    float   Pitch;
-    float   Roll;
-    float   Gx;
-    float   Gy;
-    float   Gz;
-    float   Ax;
-    float   Ay;
-    float   Az;
+    float   Yaw;        // 偏航角
+    float   Pitch;      // 俯仰角
+    float   Roll;       // 横滚角
+    float   Gx;         // X轴角速度
+    float   Gy;         // Y轴角速度
+    float   Gz;         // Z轴角速度
+    float   Ax;         // X轴加速度
+    float   Ay;         // Y轴加速度
+    float   Az;         // Z轴加速度
     float   V0;         // 电机0真实速度
     float   V1;         // 电机1真实速度
-    float   bat;        // 电池电压
     float   Set_V0;     // 电机0设定速度
     float   Set_V1;     // 电机1设定速度
+    float   bat;        // 电池电压
     float   Yaw_offset; // 磁力计与MPU6050的Yaw角偏差
-    uint8_t     low_bat_warning;
-    uint8_t     pick_up_flag;
-    uint8_t     falling_flag;
-    TURN_CONTROL_TYPE     turn_sta; // 转弯类型(角度闭环/自由转向)
+    float   S0;         // 电机0转动里程 （弧度）
+    float   S1;         // 电机1转动里程 （弧度）
+    float   S_cur;      // 当前小车的位置
+        
+    uint8_t     low_bat_warning;    // 低压警告标志位
+    uint8_t     pick_up_flag;       // 拿起检测标志位
+    uint8_t     falling_flag;       // 倒地检测标志位
     
-  
+    TURN_CONTROL_TYPE     turn_sta;     // 转弯类型       (角度闭环/自由转向)
+    VELOCITY_CONTROL_TYPE veloc_sta;    // 速度控制类型   (位置闭环/自由蓝牙控制)
+    DETECT_TARGET_TYPE    yolo;         // Yolov5目标检测算法变量
 }SYSTEM_TYPE_DEF;
 
 extern SYSTEM_TYPE_DEF sys;

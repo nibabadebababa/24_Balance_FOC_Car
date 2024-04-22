@@ -44,12 +44,14 @@ void Bluetooth_Cmd_Pro(void)
                     Dir.target = Dir.target - 360;
                 }
             break;
+                
             case Right_Rot_45:
                  Dir.target -= 45;
                 if(Dir.target<-180){
                     Dir.target = Dir.target + 360;
                 }               
             break;
+                
             default:
                 Velocity.target = 0;
                 Dir.target = sys.Yaw;   

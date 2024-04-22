@@ -6,10 +6,14 @@
 
 #define 	TORQUE_MAX		140
 #define 	V_BUF_LEN		5
-
+#define     S_BUF_LEN       5
 float Velocity_Buf0[V_BUF_LEN];
 float Velocity_Buf1[V_BUF_LEN];
+float S_Buf0[S_BUF_LEN];
+float S_Buf1[S_BUF_LEN];
+
 uint8_t buf_pointer=0;
+uint8_t sp = 0;
 
 void UART6_DAPLink_Rx_Update(void)
 {
@@ -40,16 +44,21 @@ void UART6_DAPLink_Proc(void)
 void UART2_ESP32_Proc(void)
 {
     Velocity_Buf0[buf_pointer] = (float)((short)(( ((short)uart2_rxdata[0]) <<8) | uart2_rxdata[1]))/10.0f;
-    Velocity_Buf1[buf_pointer] = (float)((short)(( ((short)uart2_rxdata[2]) <<8) | uart2_rxdata[3]))/10.0f;
+    Velocity_Buf1[buf_pointer++] = (float)((short)(( ((short)uart2_rxdata[2]) <<8) | uart2_rxdata[3]))/10.0f;
+    S_Buf0[sp] = (float)((short)(( ((short)uart2_rxdata[4]) <<8) | uart2_rxdata[5]))/10.0f;
+    S_Buf1[sp++] = (float)((short)(( ((short)uart2_rxdata[6]) <<8) | uart2_rxdata[7]))/10.0f;
 
-    buf_pointer++;
     if(buf_pointer>=V_BUF_LEN){
         sys.V0 = Median_Filter(Velocity_Buf0, V_BUF_LEN);
         sys.V1 = Median_Filter(Velocity_Buf1, V_BUF_LEN);
         buf_pointer = 0;
-        //printf("%.1f,%.1f\n",sys.V0, sys.V1);
     }
-
+    if(sp >= S_BUF_LEN){
+        sys.S0 = Median_Filter(S_Buf0, S_BUF_LEN);
+        sys.S1 = Median_Filter(S_Buf1, S_BUF_LEN);        
+        sp = 0;
+    }
+    
     uart2_rxpointer = 0;
     memset(uart2_rxdata, 0, UART_BUF_MAX);	
 }

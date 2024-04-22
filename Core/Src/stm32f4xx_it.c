@@ -279,8 +279,44 @@ void USART3_IRQHandler(void)
   /* USER CODE END USART3_IRQn 0 */
   HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_IRQn 1 */
-  uart3_rxdata[uart3_rxpointer++] = uart3_rxdat;
-	uart3_rxpointer %= UART_BUF_MAX;
+  //uart3_rxdata[uart3_rxpointer++] = uart3_rxdat;
+	//uart3_rxpointer %= UART_BUF_MAX;
+    
+    static uint8_t rx_sta=0;
+    switch(rx_sta){
+        case 0:
+          if(uart3_rxdat == '#')
+            rx_sta = 1;
+          break;
+          
+        case 1:
+          if(uart3_rxdat == '$'){
+              rx_sta = 2;
+          }
+          else{
+              rx_sta = 0;
+          }
+          break;
+        case 2:
+            if(uart3_rxdat != '$'){
+                uart3_rxdata[uart3_rxpointer++] = uart3_rxdat;
+                uart3_rxpointer %= UART_BUF_MAX;
+            }
+            else{     
+                rx_sta = 3;
+            }
+            break;
+        case 3:
+            if(uart3_rxdat == '\n'){
+                rx_sta = 0;
+            }
+            else
+                rx_sta = 0;
+            break;
+    default:
+        rx_sta = 0;
+    }
+  
   HAL_UART_Receive_IT(&huart3, &uart3_rxdat, 1);
   /* USER CODE END USART3_IRQn 1 */
 }
