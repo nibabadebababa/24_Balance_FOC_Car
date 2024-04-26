@@ -12,12 +12,13 @@
 #define     LANDING_ROLL_N      -5      // 检测重新启动的Roll角负边界值
 #define     MED_ANGLE           5.85    // 小车的机械中值
 
-PID_TYPE_DEF  Balance ;     // 直立环
-PID_TYPE_DEF  Velocity;     // 速度环
-PID_TYPE_DEF  Turn    ;     // 转向环
-PID_TYPE_DEF  Location;     // 位置环
-PID_TYPE_DEF  Dir     ;     // 方向环
-PID_TYPE_DEF  Follow  ;     // 跟随环
+PID_TYPE_DEF  Balance ;         // 直立环
+PID_TYPE_DEF  Velocity;         // 速度环
+PID_TYPE_DEF  Turn    ;         // 转向环
+PID_TYPE_DEF  Location;         // 位置环
+PID_TYPE_DEF  Dir     ;         // 方向环
+PID_TYPE_DEF  FollowLoc  ;      // 跟随位置环
+PID_TYPE_DEF  FollowDir  ;      // 跟随方向环
 
 uint8_t     is_first_in = 1; // 记录第一次进入位置环时的位置(标志位)
 
@@ -71,6 +72,29 @@ void PID_Init(void)
     Location.outMAX = 15;
     Location.outMIN = -15;
     Location.target = 0;
+    
+    /* 跟随位置环参数 */
+    FollowLoc.Kp = 0;
+    FollowLoc.Ki = 0;
+    FollowLoc.Kd = 0;
+    FollowLoc.I = 0;
+    FollowLoc.I_MAX = 0;
+    FollowLoc.out = 0;
+    FollowLoc.outMAX = 0;
+    FollowLoc.outMIN = 0;
+    FollowLoc.target = 0;
+    
+    /* 跟随方向环参数 */
+        /* 跟随位置环参数 */
+    FollowDir.Kp = 0;
+    FollowDir.Ki = 0;
+    FollowDir.Kd = 0;
+    FollowDir.I = 0;
+    FollowDir.I_MAX = 0;
+    FollowDir.out = 0;
+    FollowDir.outMAX = 0;
+    FollowDir.outMIN = 0;
+    FollowDir.target = 0;
 }
 
 void PID_Control_Update(void)
@@ -244,9 +268,45 @@ float Location_PID_Calcu(float target_s, float current_s, float ax)
     return PID_out;
 }
 
-void Follow_PID_Calcu(float target, float current)
+float FollowLoc_PID_Calcu(float target, float current)
 {
+    static float Last_Error = 0;
+    float Error,PID_out = 0;    
+
+    Error = target - current;
     
+    FollowLoc.I += Error;
+    
+    /* 积分限幅 */
+    FollowLoc.I = (FollowLoc.I > FollowLoc.I_MAX) ? (FollowLoc.I_MAX):  \
+      ( (FollowLoc.I < -FollowLoc.I_MAX) ? (-FollowLoc.I_MAX) : (FollowLoc.I) );
+    
+    PID_out = FollowLoc.Kp*Error + FollowLoc.Ki*FollowLoc.I + FollowLoc.Kd*(Error - Last_Error);
+    Last_Error = Error;
+    
+    /* 输出限幅 */
+    PID_out =  ( PID_out > FollowLoc.outMAX) ? (FollowLoc.outMAX): \
+                ((PID_out < FollowLoc.outMIN) ? (FollowLoc.outMIN):PID_out);
+    
+    return PID_out;
+}
+
+float FollowDir_PID_Calcu(float target, float current)
+{
+    static float Last_Error = 0;
+    float Error,PID_out = 0;    
+
+    Error = target - current;
+    
+
+    PID_out = FollowLoc.Kp*Error + FollowLoc.Kd*(Error - Last_Error);
+    Last_Error = Error;
+    
+    /* 输出限幅 */
+    PID_out =  ( PID_out > FollowDir.outMAX) ? (FollowDir.outMAX): \
+                ((PID_out < FollowDir.outMIN) ? (FollowDir.outMIN):PID_out);
+    
+    return PID_out;    
 }
 
 
