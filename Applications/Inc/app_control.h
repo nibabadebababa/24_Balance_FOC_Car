@@ -34,9 +34,9 @@ void Pick_Up_Detect(float velocity, float pitch);
 void Falling_Detect(float pitch);
 float Turn_PID_Calcu(float RC, float gyro_Z);
 void Landing_Detect(void);
-float Location_PID_Calcu(float target_s, float current_s, float ax);
-float FollowLoc_PID_Calcu(float target, float current);
-float FollowDir_PID_Calcu(float target, float current);
+float Location_PID_Calcu(float target_s, float current_s, float accel_x);
+float FollowLoc_PID_Calcu(float target, float current, float accel_x);
+float FollowDir_PID_Calcu(float target, float current, float gyro_z);
 
 
 #endif

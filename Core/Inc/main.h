@@ -75,13 +75,15 @@ void System_Calibration_Yaw(void);
 #define     MOTOR1          1
 
 typedef enum{
-    ANGLE = 0,      // 角度闭环控制
-    FREEDOM = 1,    // 自由转向控制
-}TURN_CONTROL_TYPE; // 转弯类型
+    ANGLE_CTRL = 0,         // 角度闭环控制
+    BT_TURN_CTRL = 1,       // 自由转向控制
+    YOLO_TURN_CTRL  = 2,    // YOLO目标方向跟随
+}TURN_CONTROL_TYPE;         // 转弯类型
 
 typedef enum{
-    LOCATION_CTRL=0,     // 位置闭环控制
-    BT_CTRL=1,    // 蓝牙自由控制
+    LOCATION_CTRL=0,    // 位置闭环控制
+    BT_CTRL=1,          // 蓝牙自由控制
+    YOLO_FOLLOW_CTRL=2, // YOLO目标位置跟随
 }VELOCITY_CONTROL_TYPE;
 
 typedef struct{
@@ -117,7 +119,6 @@ typedef struct {
     float   S0;         // 电机0转动里程 （弧度）
     float   S1;         // 电机1转动里程 （弧度）
     float   S_cur;      // 当前小车的位置
-        
     uint8_t     low_bat_warning;    // 低压警告标志位
     uint8_t     pick_up_flag;       // 拿起检测标志位
     uint8_t     falling_flag;       // 倒地检测标志位
@@ -125,6 +126,7 @@ typedef struct {
     TURN_CONTROL_TYPE     turn_sta;     // 转弯类型       (角度闭环/自由转向)
     VELOCITY_CONTROL_TYPE veloc_sta;    // 速度控制类型   (位置闭环/自由蓝牙控制)
     DETECT_TARGET_TYPE    yolo;         // Yolov5目标检测算法变量
+    uint8_t     yolo_flag;  // Yolov5检测到目标标志位
 }SYSTEM_TYPE_DEF;
 
 extern SYSTEM_TYPE_DEF sys;

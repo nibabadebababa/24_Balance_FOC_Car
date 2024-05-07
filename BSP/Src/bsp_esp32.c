@@ -124,3 +124,8 @@ float Median_Filter(float* buffer, uint8_t len)
     
     return temp;
 }
+
+float Get_Motor_S(void)
+{
+    return ((sys.S0-sys.S1)/2.0f);
+}

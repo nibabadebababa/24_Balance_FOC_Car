@@ -48,6 +48,7 @@
 
 #define VELOCITY_DEBUG    // 不等待电机自检完成
 #define YAW_ONLY_USE_MPU    // 只使用MPU6050获取Yaw角
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -59,24 +60,31 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
+/* Definitions for PID_Ctrl_Task */
+osThreadId_t PID_Ctrl_TaskHandle;
+const osThreadAttr_t PID_Ctrl_Task_attributes = {
+  .name = "PID_Ctrl_Task",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal1,
 };
-/* Definitions for myTask02 */
-osThreadId_t myTask02Handle;
-const osThreadAttr_t myTask02_attributes = {
-  .name = "myTask02",
+/* Definitions for UART_Rx_Task */
+osThreadId_t UART_Rx_TaskHandle;
+const osThreadAttr_t UART_Rx_Task_attributes = {
+  .name = "UART_Rx_Task",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for myTask03 */
-osThreadId_t myTask03Handle;
-const osThreadAttr_t myTask03_attributes = {
-  .name = "myTask03",
+/* Definitions for Detect_Task */
+osThreadId_t Detect_TaskHandle;
+const osThreadAttr_t Detect_Task_attributes = {
+  .name = "Detect_Task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for LED_Task */
+osThreadId_t LED_TaskHandle;
+const osThreadAttr_t LED_Task_attributes = {
+  .name = "LED_Task",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
@@ -85,9 +93,10 @@ const osThreadAttr_t myTask03_attributes = {
 /* USER CODE BEGIN FunctionPrototypes */
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void *argument);
-void StartTask02(void *argument);
-void StartTask03(void *argument);
+void PIDCtrl_Task(void *argument);
+void UARTRx_Task(void *argument);
+void DetectTask(void *argument);
+void LEDTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -117,14 +126,17 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  /* creation of PID_Ctrl_Task */
+  PID_Ctrl_TaskHandle = osThreadNew(PIDCtrl_Task, NULL, &PID_Ctrl_Task_attributes);
 
-  /* creation of myTask02 */
-  myTask02Handle = osThreadNew(StartTask02, NULL, &myTask02_attributes);
+  /* creation of UART_Rx_Task */
+  UART_Rx_TaskHandle = osThreadNew(UARTRx_Task, NULL, &UART_Rx_Task_attributes);
 
-  /* creation of myTask03 */
-  myTask03Handle = osThreadNew(StartTask03, NULL, &myTask03_attributes);
+  /* creation of Detect_Task */
+  Detect_TaskHandle = osThreadNew(DetectTask, NULL, &Detect_Task_attributes);
+
+  /* creation of LED_Task */
+  LED_TaskHandle = osThreadNew(LEDTask, NULL, &LED_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -136,119 +148,132 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_PIDCtrl_Task */
 /**
- * @brief  Function implementing the defaultTask thread.
- * @param  argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+  * @brief  Function implementing the PID_Ctrl_Task thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_PIDCtrl_Task */
+void PIDCtrl_Task(void *argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN PIDCtrl_Task */
   /* Infinite loop */
-  BaseType_t preTick = xTaskGetTickCount();
-  
-    uint8_t cnt = 0;
-  while(sys.Motor_Ready==0){
-      printf("Waiting for Motor Self-Detect...\n");
-    vTaskDelay(100);
-  }
-  System_Calibration_Yaw();
-  
-  for (;;) {
-    System_Get_Pose();
-      if(cnt){
-          System_Get_Yaw();
-          cnt=0;
-      }
-      //printf("%.1f\n",sys.Pitch);
-    //Falling_Detect(sys.Pitch);
-    Pick_Up_Detect(sys.V0-sys.V1,sys.Pitch);
-    //printf("%.1f,%.1f,%.1f,%.1f\n",sys.Roll, sys.Pitch, sys.Ax, sys.Ay);
-    UART2_ESP32_Rx_Update();
-      //Set_Motor_Torque(MOTOR0, 10);
-      //Set_Motor_Torque(MOTOR1, 10);
-      
-      if(sys.falling_flag || sys.pick_up_flag){
-          Set_Motor_Torque(MOTOR0, 0);
-          Set_Motor_Torque(MOTOR1, 0);
-      }
-      else{
-          PID_Control_Update();
-      }
     
-    cnt++;
-    vTaskDelay(1);
-  }
-  /* USER CODE END StartDefaultTask */
+    while(sys.Motor_Ready==0){
+        printf("Waiting for Motor Self-Detect...\n");
+        vTaskDelay(100);
+    }    
+    
+    for(;;)
+    {
+        System_Get_Pose();
+        System_Get_Yaw();
+        UART2_ESP32_Rx_Update();
+        if(sys.falling_flag || sys.pick_up_flag){
+            Set_Motor_Torque(MOTOR0, 0);
+            Set_Motor_Torque(MOTOR1, 0);
+        }
+        else{
+            PID_Control_Update();
+        }
+
+        vTaskDelay(1);
+        printf("b=%.2f\n",sys.bat);
+        
+    }
+  /* USER CODE END PIDCtrl_Task */
 }
 
-/* USER CODE BEGIN Header_StartTask02 */
+/* USER CODE BEGIN Header_UARTRx_Task */
 /**
- * @brief Function implementing the myTask02 thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartTask02 */
-void StartTask02(void *argument)
+* @brief Function implementing the UART_Rx_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_UARTRx_Task */
+void UARTRx_Task(void *argument)
 {
-  /* USER CODE BEGIN StartTask02 */
-  uint8_t i;
+  /* USER CODE BEGIN UARTRx_Task */
   /* Infinite loop */
-  for (;;) {
-    if(sys.falling_flag){
-          /* 闪烁一次：检测到倒地 */
-          HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_RESET);
-          vTaskDelay(200);  
-          HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_SET); 
-          vTaskDelay(1000);           
-      }
-      else if(sys.pick_up_flag){
-          /* 闪烁三次：检测到拿起 */
-          for(i=0;i<3;i++){
-              HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_RESET);
-              vTaskDelay(200);  
-              HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_SET);
-              vTaskDelay(200);  
-          }
-          vTaskDelay(1000);           
-      }
-      else if(sys.bat<11.5f){
-          /* 熄灭：检测到电池电压过低 */
-          HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_SET);
-      }
-      else{
-          /* 一直闪烁：正常*/
-          HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
-          vTaskDelay(100);
-      }
-
-  }
-  /* USER CODE END StartTask02 */
-}
-
-/* USER CODE BEGIN Header_StartTask03 */
-/**
- * @brief Function implementing the myTask03 thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartTask03 */
-void StartTask03(void *argument)
-{
-  /* USER CODE BEGIN StartTask03 */
-  //  int speed = 0;
-  /* Infinite loop */
-  for (;;) {
+  for(;;)
+  {
     UART1_BLE_Rx_Update();
-    UART2_ESP32_Rx_Update();
+    //UART2_ESP32_Rx_Update();
     UART3_X3_Rx_Update();
     UART6_DAPLink_Rx_Update();
     Bluetooth_Cmd_Pro();
-      System_Get_Battry();
+    
+    vTaskDelay(1);
   }
-  /* USER CODE END StartTask03 */
+  /* USER CODE END UARTRx_Task */
+}
+
+/* USER CODE BEGIN Header_DetectTask */
+/**
+* @brief Function implementing the Detect_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_DetectTask */
+void DetectTask(void *argument)
+{
+  /* USER CODE BEGIN DetectTask */
+  /* Infinite loop */
+  for(;;)
+  {
+      System_Get_Battry();
+      Pick_Up_Detect(sys.V0-sys.V1,sys.Pitch);
+      Falling_Detect(sys.Pitch);
+
+      vTaskDelay(1);
+  }
+  /* USER CODE END DetectTask */
+}
+
+/* USER CODE BEGIN Header_LEDTask */
+/**
+* @brief Function implementing the LED_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_LEDTask */
+void LEDTask(void *argument)
+{
+  /* USER CODE BEGIN LEDTask */
+  /* Infinite loop */
+    uint8_t i;
+  for(;;)
+  {
+        if(sys.falling_flag){
+              /* 闪烁一次：检测到倒地 */
+              HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_RESET);
+              vTaskDelay(200);  
+              HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_SET); 
+              vTaskDelay(1000);           
+          }
+          else if(sys.pick_up_flag){
+              /* 闪烁三次：检测到拿起 */
+              for(i=0;i<3;i++){
+                  HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_RESET);
+                  vTaskDelay(200);  
+                  HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_SET);
+                  vTaskDelay(200);  
+              }
+              vTaskDelay(1000);           
+          }
+          else if(sys.bat<11.5f){
+              /* 熄灭：检测到电池电压过低 */
+              HAL_GPIO_WritePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin, GPIO_PIN_SET);
+          }
+          else{
+              /* 一直闪烁：正常*/
+              HAL_GPIO_TogglePin(LED_ACTION_GPIO_Port, LED_ACTION_Pin);
+              vTaskDelay(100);
+          }
+
+  }
+  /* USER CODE END LEDTask */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -273,10 +298,10 @@ void System_Init(void)
     sys.HMC_Ready = 0;
     sys.pick_up_flag = 0;           // 拿起检测标志位
     sys.falling_flag = 0;           // 倒地检测标志位
-    sys.turn_sta = ANGLE;
-    sys.veloc_sta = LOCATION_CTRL;  // 位置闭环模式
+    sys.turn_sta = YOLO_TURN_CTRL;
+    sys.veloc_sta = YOLO_FOLLOW_CTRL;        // 位置闭环模式
     sys.S_cur = (sys.S0 - sys.S1)/2;  // 记录当前小车的位置
-    
+    sys.yolo_flag = 0;
     /* 蓝牙初始状态 */
     bt.cmd = Self_Ctrl;
     bt.rx_flag = 0;

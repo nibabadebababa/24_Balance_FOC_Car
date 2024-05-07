@@ -287,6 +287,9 @@ void USART3_IRQHandler(void)
         case 0:
           if(uart3_rxdat == '#')
             rx_sta = 1;
+          else if(uart3_rxdat == 0xEF){
+             sys.yolo_flag = 0;
+          }
           break;
           
         case 1:
@@ -301,6 +304,7 @@ void USART3_IRQHandler(void)
             if(uart3_rxdat != '$'){
                 uart3_rxdata[uart3_rxpointer++] = uart3_rxdat;
                 uart3_rxpointer %= UART_BUF_MAX;
+                sys.yolo_flag = 1;
             }
             else{     
                 rx_sta = 3;
@@ -313,6 +317,7 @@ void USART3_IRQHandler(void)
             else
                 rx_sta = 0;
             break;
+            
     default:
         rx_sta = 0;
     }

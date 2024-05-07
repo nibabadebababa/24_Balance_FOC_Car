@@ -12,6 +12,7 @@ void Set_Motor_Torque(uint8_t motor, float torque);
 float Velocity_Filter(float* buffer);
 float Median_Filter(float* buffer, uint8_t len);
 float Average_Filter(float* buffer, uint8_t len);
+float Get_Motor_S(void);
 
 #endif
 

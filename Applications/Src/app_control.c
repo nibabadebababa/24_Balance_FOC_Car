@@ -11,6 +11,8 @@
 #define     LANDING_ROLL_P      5       // 检测重新启动的Roll角正边界值
 #define     LANDING_ROLL_N      -5      // 检测重新启动的Roll角负边界值
 #define     MED_ANGLE           5.85    // 小车的机械中值
+#define     MED_PIXEL_POSITION  (9.60)  // Yolov5目标方向像素中值
+#define     YOLO_RECT_SIZE      (400)   // YOlov5目标矩阵框大小
 
 PID_TYPE_DEF  Balance ;         // 直立环
 PID_TYPE_DEF  Velocity;         // 速度环
@@ -36,7 +38,7 @@ void PID_Init(void)
     Balance.target = MED_ANGLE;
     
     /* 速度环参数 */
-    Velocity.Kp = 1.22;       // 1.25
+    Velocity.Kp = 1.25;       // 1.25
     Velocity.Ki = Velocity.Kp/200.0f;
     Velocity.Kd = 0;
     Velocity.I = 0;
@@ -74,69 +76,91 @@ void PID_Init(void)
     Location.target = 0;
     
     /* 跟随位置环参数 */
-    FollowLoc.Kp = 0;
+    FollowLoc.Kp = 0.15;
     FollowLoc.Ki = 0;
-    FollowLoc.Kd = 0;
+    FollowLoc.Kd = 10;
     FollowLoc.I = 0;
     FollowLoc.I_MAX = 0;
     FollowLoc.out = 0;
-    FollowLoc.outMAX = 0;
-    FollowLoc.outMIN = 0;
-    FollowLoc.target = 0;
+    FollowLoc.outMAX = 13;
+    FollowLoc.outMIN = -13;
+    FollowLoc.target = YOLO_RECT_SIZE;
     
     /* 跟随方向环参数 */
-        /* 跟随位置环参数 */
-    FollowDir.Kp = 0;
+    FollowDir.Kp = 1.3;   // 4
     FollowDir.Ki = 0;
-    FollowDir.Kd = 0;
+    FollowDir.Kd = -0.1;
     FollowDir.I = 0;
     FollowDir.I_MAX = 0;
     FollowDir.out = 0;
-    FollowDir.outMAX = 0;
-    FollowDir.outMIN = 0;
-    FollowDir.target = 0;
+    FollowDir.outMAX = 40;
+    FollowDir.outMIN = -40;
+    FollowDir.target = MED_PIXEL_POSITION;
 }
 
 void PID_Control_Update(void)
 {
-    /* 判断当前的速度控制模式是否处于位置闭环控制模式 */
+    /* 1.判断当前的速度控制模式是否处于位置闭环控制模式 */
     if(sys.veloc_sta == LOCATION_CTRL ){
         if(is_first_in){
             Location.target = (sys.S0-sys.S1)/2;
             is_first_in = 0;
         }
-        /* 计算位置环 */
+        /* 2.计算位置环 */
         Location.out = Location_PID_Calcu(Location.target, (sys.S0-sys.S1)/2, sys.Ax);
-        /* 位置环控制速度 */
+        /* 3.位置环控制速度 */
         Velocity.target = Location.out;
     }
+    else if(sys.veloc_sta == YOLO_FOLLOW_CTRL){
+        if(sys.yolo_flag==1){
+            /* 2.计算跟随位置环 */
+            FollowLoc.target = YOLO_RECT_SIZE;
+            FollowLoc.out = FollowLoc_PID_Calcu(FollowLoc.target, (sys.yolo.height*sys.yolo.width)/100.0f, sys.Ax);
+            /* 3.跟随位置环控制速度 */
+            Velocity.target = FollowLoc.out;            
+        }
+        else
+            Velocity.target = 0;
+    }
     else if(sys.veloc_sta == BT_CTRL){
-        /* 蓝牙控制速度 */
+        /* 2.蓝牙控制速度 */
         is_first_in = 1;
     }
     
-    /* 计算速度环 */
+    /* 4.计算速度环 */
     Velocity.out = Velocity_PID_Calcu(Velocity.target, sys.V0-sys.V1);
 
-    /* 计算直立环 */
+    /* 5.计算直立环 */
     Balance.out = Balance_PID_Calcu(Balance.target, sys.Pitch, sys.Gy);
 
-    /* 判断当前是角度闭环，还是自由转向 */
-    if(sys.turn_sta == ANGLE){
-        /* 计算方向环 */
+    /* 6.判断当前是角度闭环，还是自由转向 */
+    if(sys.turn_sta == ANGLE_CTRL){
+        /* 7.计算方向环 */
         Dir.out = Dir_PID_Calcu(Dir.target, sys.Yaw, sys.Gz);     
         sys.Set_V0 =  Balance.out - Velocity.out + Dir.out;
         sys.Set_V1 =  Balance.out - Velocity.out - Dir.out;        
-        
     }
-    else if(sys.turn_sta == FREEDOM){
-        /* 计算转向环 */
+    else if(sys.turn_sta == BT_TURN_CTRL){
+        /* 7.计算转向环 */
         Turn.out = Turn_PID_Calcu(Turn.target, sys.Gz);   
         sys.Set_V0 =  Balance.out - Velocity.out + Turn.out;
         sys.Set_V1 =  Balance.out - Velocity.out - Turn.out;        
     } 
-    
-    printf("%.2f,%.2f,%.2f,%.2f\n",Location.out, Velocity.out, (sys.S0-sys.S1)/2, Location.Kd*sys.Az); // 位置环Debug输出
+    else if(sys.turn_sta == YOLO_TURN_CTRL){
+        /* 7.计算目标跟随转向环 */
+        if(sys.yolo_flag){
+            FollowDir.target = MED_PIXEL_POSITION;
+            FollowDir.out = FollowDir_PID_Calcu(FollowDir.target, sys.yolo.x_offset/100.0f, sys.Gz);           
+        } else{
+            FollowDir.out = 0;
+        }
+        sys.Set_V0 =  Balance.out - Velocity.out + FollowDir.out;
+        sys.Set_V1 =  Balance.out - Velocity.out - FollowDir.out; 
+    }
+    if(sys.yolo_flag)
+        printf("%.2f,%.2f,%.2f,%.2f\n",FollowDir.out, FollowLoc.out, Velocity.out, (sys.yolo.height*sys.yolo.width)/100.0f);
+
+    //printf("%.2f,%.2f,%.2f,%.2f\n",Location.out, Velocity.out, (sys.S0-sys.S1)/2, Location.Kd*sys.Az); // 位置环Debug输出
     //printf("%.1f,%.1f,%.1f,%.1f,%.1f\n", sys.V0, sys.V1, sys.Set_V0, sys.Set_V1,Velocity.I);
     //printf("%.1f,%.1f,%.1f\n",Velocity.out, Balance.out, sys.Set_V0);
     //printf("%.1f,%.1f,%.1f,%.1f\n",Dir.target,sys.Yaw, sys.Gz, sys.Set_V0); //方向环Debug输出
@@ -235,7 +259,7 @@ float Turn_PID_Calcu(float RC, float gyro_Z)
 	return PID_out;
 }
 
-float Location_PID_Calcu(float target_s, float current_s, float ax)
+float Location_PID_Calcu(float target_s, float current_s, float accel_x)
 {
     static float Err_Lowout_cur = 0, Err_Lowout_pre = 0;    // 低通滤波后的误差值
     float a = 0.3;      // 低通滤波器系数
@@ -244,9 +268,10 @@ float Location_PID_Calcu(float target_s, float current_s, float ax)
     Error = target_s - current_s;
     if(Error < 2 && Error > -2){
         /* 在正常允许的误差范围内则抑制误差，减小来回摆动 */
-        Error = Error/3;
+        Error = Error/4;
     }
     else if(Error >50 || Error < -50){
+        /* 除去异常值 */
         return 0;
     }
     Err_Lowout_cur = (1-a)*Error + a*Err_Lowout_pre;
@@ -259,7 +284,7 @@ float Location_PID_Calcu(float target_s, float current_s, float ax)
       ( (Location.I < -Location.I_MAX) ? (-Location.I_MAX) : (Location.I) ); 
     
     /* 计算PID输出 */
-    PID_out = Location.Kp*Err_Lowout_cur + Location.Ki*Location.I + Location.Kd*ax;
+    PID_out = Location.Kp*Err_Lowout_cur + Location.Ki*Location.I + Location.Kd*accel_x;
     
     /* 输出限幅 */
     PID_out =  ( PID_out > Location.outMAX) ? (Location.outMAX): \
@@ -268,22 +293,23 @@ float Location_PID_Calcu(float target_s, float current_s, float ax)
     return PID_out;
 }
 
-float FollowLoc_PID_Calcu(float target, float current)
+float FollowLoc_PID_Calcu(float target, float current, float accel_x)
 {
-    static float Last_Error = 0;
     float Error,PID_out = 0;    
 
     Error = target - current;
-    
+    /* 抑制零点误差 */
+    if(Error >= -30 && Error <= 30){
+        Error=Error/4;
+    }
     FollowLoc.I += Error;
     
     /* 积分限幅 */
     FollowLoc.I = (FollowLoc.I > FollowLoc.I_MAX) ? (FollowLoc.I_MAX):  \
       ( (FollowLoc.I < -FollowLoc.I_MAX) ? (-FollowLoc.I_MAX) : (FollowLoc.I) );
     
-    PID_out = FollowLoc.Kp*Error + FollowLoc.Ki*FollowLoc.I + FollowLoc.Kd*(Error - Last_Error);
-    Last_Error = Error;
-    
+    PID_out = FollowLoc.Kp*Error + FollowLoc.Ki*FollowLoc.I + FollowLoc.Kd*accel_x;
+
     /* 输出限幅 */
     PID_out =  ( PID_out > FollowLoc.outMAX) ? (FollowLoc.outMAX): \
                 ((PID_out < FollowLoc.outMIN) ? (FollowLoc.outMIN):PID_out);
@@ -291,16 +317,17 @@ float FollowLoc_PID_Calcu(float target, float current)
     return PID_out;
 }
 
-float FollowDir_PID_Calcu(float target, float current)
+float FollowDir_PID_Calcu(float target, float current, float gyro_z)
 {
-    static float Last_Error = 0;
     float Error,PID_out = 0;    
 
     Error = target - current;
+    /* 抑制零点误差 */
+    if(Error < 3 && Error > -3){
+        Error = Error/3;
+    }
     
-
-    PID_out = FollowLoc.Kp*Error + FollowLoc.Kd*(Error - Last_Error);
-    Last_Error = Error;
+    PID_out = FollowDir.Kp*Error + FollowDir.Kd*gyro_z;
     
     /* 输出限幅 */
     PID_out =  ( PID_out > FollowDir.outMAX) ? (FollowDir.outMAX): \

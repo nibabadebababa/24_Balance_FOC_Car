@@ -3,10 +3,11 @@
 #include "cmsis_os.h"
 #include "stdio.h"
 #include "app_bluetooth.h"
+#include "app_control.h"
 
 
 BT_PARA_TYPE_DEF bt;
-
+extern PID_TYPE_DEF FollowLoc;
 
 void UART1_BLE_Rx_Update(void)
 {
@@ -50,6 +51,34 @@ void UART1_BLE_Proc(void)
         bt.cmd = Right_Rot_45;
         bt.rx_flag = 1;
         UART1_BLE_Print("Right Rotation 45\n");       
+    } else if( strcmp((char*)uart1_rxdata, "H") == 0 ){
+        bt.cmd = Location_Fix;
+        bt.rx_flag = 1;
+        UART1_BLE_Print("Location Fixed Mode\n");       
+    } else if( strcmp((char*)uart1_rxdata, "I") == 0 ){
+        bt.cmd = Angle_Fix;
+        bt.rx_flag = 1;
+        UART1_BLE_Print("Angle Fixed Mode\n");       
+    } else if( strcmp((char*)uart1_rxdata, "J") == 0 ){
+        bt.cmd = Location_YOLO;
+        bt.rx_flag = 1;
+        UART1_BLE_Print("Location Follow With YOLO\n");       
+    } else if( strcmp((char*)uart1_rxdata, "K") == 0 ){
+        bt.cmd = Angle_YOLO;
+        bt.rx_flag = 1;
+        UART1_BLE_Print("Angle Follow With YOLO\n");       
+    } else if( strcmp((char*)uart1_rxdata, "L") == 0 ){
+        char text[25];
+        FollowLoc.target += 50;
+        FollowLoc.target = ((int)FollowLoc.target)%500;
+        sprintf(text, (char*)"YOLO Target Size=%.1f\n", FollowLoc.target);
+        UART1_BLE_Print(text);       
+    } else if( strcmp((char*)uart1_rxdata, "M") == 0 ){
+        char text[25];
+        FollowLoc.target -= 50;
+        if(FollowLoc.target < 50) FollowLoc.target = 50;
+        sprintf(text, (char*)"YOLO Target Size=%.1f\n", FollowLoc.target);
+        UART1_BLE_Print(text);  
     }
     else {
         bt.cmd = Self_Ctrl;
