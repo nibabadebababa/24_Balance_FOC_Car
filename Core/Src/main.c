@@ -33,7 +33,6 @@
 
 #include "app_control.h"
 #include "app_bluetooth.h"
-#include "app_x3.h"
 #include "bsp_battry.h"
 #include "bsp_bluetooth.h"
 #include "bsp_dmp.h"
