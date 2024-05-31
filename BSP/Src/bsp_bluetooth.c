@@ -70,13 +70,13 @@ void UART1_BLE_Proc(void)
     } else if( strcmp((char*)uart1_rxdata, "L") == 0 ){
         char text[25];
         FollowLoc.target += 50;
-        FollowLoc.target = ((int)FollowLoc.target)%500;
+        FollowLoc.target = ((int)FollowLoc.target)%700;
         sprintf(text, (char*)"YOLO Target Size=%.1f\n", FollowLoc.target);
         UART1_BLE_Print(text);       
     } else if( strcmp((char*)uart1_rxdata, "M") == 0 ){
         char text[25];
         FollowLoc.target -= 50;
-        if(FollowLoc.target < 50) FollowLoc.target = 50;
+        if(FollowLoc.target < 100) FollowLoc.target = 100;
         sprintf(text, (char*)"YOLO Target Size=%.1f\n", FollowLoc.target);
         UART1_BLE_Print(text);  
     }

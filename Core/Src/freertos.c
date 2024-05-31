@@ -179,8 +179,6 @@ void PIDCtrl_Task(void *argument)
         }
 
         vTaskDelay(1);
-        printf("b=%.2f\n",sys.bat);
-        
     }
   /* USER CODE END PIDCtrl_Task */
 }
@@ -294,12 +292,12 @@ void System_Init(void)
     sys.Motor_Ready = 0;
     #endif
     
-    sys.MPU_Ready = 0;
-    sys.HMC_Ready = 0;
+    sys.MPU_Ready = 0;  // MPU初始化完成
+    sys.HMC_Ready = 0;  // HMC磁力计初始化完成
     sys.pick_up_flag = 0;           // 拿起检测标志位
     sys.falling_flag = 0;           // 倒地检测标志位
-    sys.turn_sta = YOLO_TURN_CTRL;
-    sys.veloc_sta = YOLO_FOLLOW_CTRL;        // 位置闭环模式
+    sys.turn_sta = ANGLE_CTRL;
+    sys.veloc_sta = LOCATION_CTRL;    // 位置闭环模式
     sys.S_cur = (sys.S0 - sys.S1)/2;  // 记录当前小车的位置
     sys.yolo_flag = 0;
     /* 蓝牙初始状态 */

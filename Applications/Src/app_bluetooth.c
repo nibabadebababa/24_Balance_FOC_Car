@@ -3,7 +3,7 @@
 #include "app_control.h"
 #include "bsp_esp32.h"
 
-#define FORWARD_VELOCITY    25.0f
+#define FORWARD_VELOCITY    20.0f
 #define ROTATION_VELOCITY   15.0f
 
 uint8_t accelerate = 0;

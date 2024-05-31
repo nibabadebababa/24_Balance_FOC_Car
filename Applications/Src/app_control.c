@@ -3,7 +3,7 @@
 #include "stdio.h"
 
 #define     PICKUP_P_MAX        8       // 检测拿起的角度范围 ±9°
-#define     PICKUP_V_MIN        90      // 检测拿起的速度范围 ±    
+#define     PICKUP_V_MIN        60      // 检测拿起的速度范围 ±    
 #define     FALLING_PITCH_P     60      // 检测倒地的角度正边界值
 #define     FALLING_PITCH_N     -60     // 检测倒地的角度负边界值
 #define     LANDING_PITCH_P     5       // 检测重新启动的Pitch角正边界值
@@ -12,7 +12,7 @@
 #define     LANDING_ROLL_N      -5      // 检测重新启动的Roll角负边界值
 #define     MED_ANGLE           5.85    // 小车的机械中值
 #define     MED_PIXEL_POSITION  (9.60)  // Yolov5目标方向像素中值
-#define     YOLO_RECT_SIZE      (400)   // YOlov5目标矩阵框大小
+#define     YOLO_RECT_SIZE      (300)   // YOlov5目标矩阵框大小
 
 PID_TYPE_DEF  Balance ;         // 直立环
 PID_TYPE_DEF  Velocity;         // 速度环
@@ -71,8 +71,8 @@ void PID_Init(void)
     Location.Kd = 10;
     Location.I = 0;
     Location.I_MAX = 1000;
-    Location.outMAX = 15;
-    Location.outMIN = -15;
+    Location.outMAX = 12;
+    Location.outMIN = -12;
     Location.target = 0;
     
     /* 跟随位置环参数 */
@@ -82,12 +82,12 @@ void PID_Init(void)
     FollowLoc.I = 0;
     FollowLoc.I_MAX = 0;
     FollowLoc.out = 0;
-    FollowLoc.outMAX = 13;
-    FollowLoc.outMIN = -13;
+    FollowLoc.outMAX = 8;
+    FollowLoc.outMIN = -8;
     FollowLoc.target = YOLO_RECT_SIZE;
     
     /* 跟随方向环参数 */
-    FollowDir.Kp = 1.3;   // 4
+    FollowDir.Kp = 1.35;   // 4
     FollowDir.Ki = 0;
     FollowDir.Kd = -0.1;
     FollowDir.I = 0;
@@ -112,7 +112,7 @@ void PID_Control_Update(void)
         Velocity.target = Location.out;
     }
     else if(sys.veloc_sta == YOLO_FOLLOW_CTRL){
-        if(sys.yolo_flag==1){
+        if(sys.yolo_flag == 1){
             /* 2.计算跟随位置环 */
             FollowLoc.target = YOLO_RECT_SIZE;
             FollowLoc.out = FollowLoc_PID_Calcu(FollowLoc.target, (sys.yolo.height*sys.yolo.width)/100.0f, sys.Ax);
